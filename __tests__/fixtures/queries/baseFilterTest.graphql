@@ -1,64 +1,19 @@
 query text {
-  distinctFromInsensitive: allFilterables(filter:  {}) {
-    ...nodes
-  }
-  backwardFilterOnPolymorphic: allParents(filter:{
-    taggs:{
-      some:{
-        content:{equalTo:"tagged on parent1"}
+  backwardAssociation: allParents(){
+    nodes{
+      taggs {
+        nodes{
+          content
+        }
       }
     }
-  }){
-    nodes{
-      id
-    }
-  }
-  backwardFilterOnPolymorphicEvery: allParents(filter:{
-    taggs:{
-      every:{
-        content:{includes:"parent2"}
-      }
-    }
-  }){
-    nodes{
-      id
-    }
-  }
-  backwardFilterOnPolymorphicNone: allParents(filter:{
-    taggs:{
-      none:{
-        content:{includes:"parent2"}
-      }
-    }
-  }){
-    nodes{
-      id
-    }
-  } 
-  forwardFilterOnPolymorphic: allTaggs(filter:{
-    parentAsTaggable:{
-      id:{equalTo:2}
-    }
-  }){
-    nodes{
-      id
-      content
-    }
-  }
-  backwardUniqueOnPolymorphic: allForwards(filter:{
-    uniqueTagg:{
-      content:{equalTo:"unique tagged on forward2"}
-    }
-  }){
-    nodes{
-      id
-      name
-    }
-  }
-}
 
-fragment nodes on FilterablesConnection {
-  nodes {
-    id
+  }
+  forwardAssociation: allTaggs(filter:{}){
+    nodes{
+      parentAsTaggable{
+        id
+      }
+    }
   }
 }

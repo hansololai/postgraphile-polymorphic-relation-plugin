@@ -1,14 +1,9 @@
 import { SchemaBuilder, Options } from 'postgraphile';
 import { GraphileBuild } from 'postgraphile-plugin-connection-filter-polymorphic/dist/postgraphile_types';
+import { PgPolymorphicConstraints } from 'postgraphile-plugin-connection-filter-polymorphic'
 import { QueryBuilder } from 'graphile-build-pg';
 import { IGraphQLToolsResolveInfo } from 'graphql-tools';
 
-export interface PgPolymorphicConstraint {
-  name: string;
-  from: string; // classId
-  to: string[]; // due to limitation at the time, it is the ModelName array.
-}
-export type PgPolymorphicConstraints = PgPolymorphicConstraint[];
 
 export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // const { pgSimpleCollections } = option;
