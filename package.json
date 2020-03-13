@@ -1,0 +1,68 @@
+{
+  "name": "postgraphile-plugin-connection-filter-polymorphic",
+  "version": "1.1.16",
+  "description": "Extention of filtering of Connections to allow Polymorphic assocations in PostGraphile",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "lint": "tslint --config tslint.json --project tsconfig.json",
+    "test": "scripts/test",
+    "build": "tsc --declaration",
+    "release-it": "yarn version --patch && git push --follow-tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hansololai/postgraphile-connection-filter-polymorphic"
+  },
+  "author": "Han Lai",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hansololai/postgraphile-connection-filter-polymorphic/issues"
+  },
+  "dependencies": {
+    "graphql-tools": "^4.0.7",
+    "postgraphile-plugin-connection-filter-polymorphic": "^1.1.16"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.5",
+    "@types/jest": "^25.1.0",
+    "graphile-build": "4.6.0",
+    "graphile-build-pg": "4.6.0",
+    "jest": "^24.8.0",
+    "pg": "^7.18.1",
+    "postgraphile": "4.6.0",
+    "postgraphile-plugin-connection-filter": "^1.0.0",
+    "ts-jest": "^24.1.0",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.18.0",
+    "tslint-config-airbnb": "^5.11.1",
+    "typescript": "^3.8.3",
+    "typescript-tslint-plugin": "^0.5.4"
+  },
+  "jest": {
+    "testRegex": "__tests__/.*\\.test\\.(js|ts)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "\\.(ts|tsx)$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsConfigFile": "tsconfig.test.json"
+      }
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=8.6"
+  }
+}
