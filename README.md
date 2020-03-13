@@ -1,0 +1,2 @@
+# postgraphile-polymorphic-relation-plugin
+ 
