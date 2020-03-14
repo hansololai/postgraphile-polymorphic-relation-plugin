@@ -6,9 +6,6 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
   // First add an inflector for polymorphic backrelation type name
   builder.hook('inflection', inflection => ({
     ...inflection,
-    filterManyPolyType(table: PgClass, foreignTable: PgClass) {
-      return `${this.filterManyType(table, foreignTable)}Poly`;
-    },
     backwardRelationByPolymorphic(
       table: PgClass,
       polyConstraint: PgPolymorphicConstraint,

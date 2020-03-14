@@ -15,7 +15,7 @@ create table p.taggs
   "taggable_type" text not null,
   "content" text
 );
-comment on column p.taggs.taggable_type is E'@isPolymorphic\n@polymorphicTo Parent';
+comment on column p.taggs.taggable_type is E'@isPolymorphic\n@polymorphicTo Parent\n@polymorphicTo NoParent';
 
 create table p.unique_taggs
 (

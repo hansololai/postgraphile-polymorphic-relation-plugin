@@ -1,13 +1,20 @@
 query text {
   backwardAssociation: allParents{
     nodes{
-      taggs {
+      taggs(orderBy: CONTENT_ASC) {
         nodes{
           content
         }
       }
+      unorderTaggs:taggs {
+        nodes{
+          content
+        }
+      }
+      uniqueTagg{
+        content
+      }
     }
-
   }
   forwardAssociation: allTaggs{
     nodes{

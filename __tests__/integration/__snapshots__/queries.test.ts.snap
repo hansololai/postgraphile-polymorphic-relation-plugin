@@ -13,9 +13,30 @@ Object {
               },
             ],
           },
+          "uniqueTagg": Object {
+            "content": "unique tagged on parent1",
+          },
+          "unorderTaggs": Object {
+            "nodes": Array [
+              Object {
+                "content": "tagged on parent1",
+              },
+            ],
+          },
         },
         Object {
           "taggs": Object {
+            "nodes": Array [
+              Object {
+                "content": "2nd tagged on parent2",
+              },
+              Object {
+                "content": "tagged on parent2",
+              },
+            ],
+          },
+          "uniqueTagg": null,
+          "unorderTaggs": Object {
             "nodes": Array [
               Object {
                 "content": "tagged on parent2",
