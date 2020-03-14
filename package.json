@@ -1,7 +1,7 @@
 {
-  "name": "postgraphile-plugin-connection-filter-polymorphic",
+  "name": "postgraphile-polymorphic-relation-plugin",
   "version": "1.1.16",
-  "description": "Extention of filtering of Connections to allow Polymorphic assocations in PostGraphile",
+  "description": "Extention that add Polymorphic Assocations in PostGraphile",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -12,12 +12,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hansololai/postgraphile-connection-filter-polymorphic"
+    "url": "git+https://github.com/hansololai/postgraphile-polymorphic-relation-plugin"
   },
   "author": "Han Lai",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hansololai/postgraphile-connection-filter-polymorphic/issues"
+    "url": "https://github.com/hansololai/postgraphile-polymorphic-relation-plugin/issues"
   },
   "dependencies": {
     "graphql-tools": "^4.0.7",
