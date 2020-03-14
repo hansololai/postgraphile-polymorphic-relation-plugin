@@ -51,8 +51,6 @@ jobs:
           environment:
             TEST_DATABASE_URL: postgres://circleci@localhost:5432/circle_test
   node10_pg11:
-    environment:
-      CC_TEST_REPORTER_ID: b35172d285983c4817f516355824f88ec5fb24d02df2870051595202b1fa0e17
     docker:
       - image: circleci/node:10
       - image: circleci/postgres:11-alpine-postgis
