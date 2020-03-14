@@ -1,0 +1,43 @@
+{
+  "extends": "tslint-config-airbnb",
+  "rules": {
+    "max-line-length": {
+      "severity": "error",
+      "options": {
+        "limit": 100,
+        "ignore-pattern": "/`/"
+      }
+    },
+    "import-name": false,
+    "variable-name": false,
+    "align": [
+      true,
+      "parameters",
+      "statements"
+    ],
+    "typedef-whitespace": [
+      true,
+      {
+        "call-signature": "nospace",
+        "index-signature": "nospace",
+        "parameter": "nospace",
+        "property-declaration": "nospace",
+        "variable-declaration": "nospace"
+      },
+      {
+        "call-signature": "onespace",
+        "index-signature": "onespace",
+        "parameter": "onespace",
+        "property-declaration": "onespace",
+        "variable-declaration": "onespace"
+      }
+    ]
+  },
+  "linterOptions": {
+    "exclude": [
+      "**/__test__/*",
+      "**/*.js",
+      "**/*.jsx"
+    ]
+  }
+}

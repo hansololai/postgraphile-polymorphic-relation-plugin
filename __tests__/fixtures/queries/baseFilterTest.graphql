@@ -1,5 +1,5 @@
 query text {
-  backwardAssociation: allParents(){
+  backwardAssociation: allParents{
     nodes{
       taggs {
         nodes{
@@ -9,7 +9,7 @@ query text {
     }
 
   }
-  forwardAssociation: allTaggs(filter:{}){
+  forwardAssociation: allTaggs{
     nodes{
       parentAsTaggable{
         id

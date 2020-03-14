@@ -3,63 +3,47 @@
 exports[`baseFilterTest.graphql 1`] = `
 Object {
   "data": Object {
-    "backwardFilterOnPolymorphic": Object {
+    "backwardAssociation": Object {
       "nodes": Array [
         Object {
-          "id": 1,
+          "taggs": Object {
+            "nodes": Array [
+              Object {
+                "content": "tagged on parent1",
+              },
+            ],
+          },
+        },
+        Object {
+          "taggs": Object {
+            "nodes": Array [
+              Object {
+                "content": "tagged on parent2",
+              },
+              Object {
+                "content": "2nd tagged on parent2",
+              },
+            ],
+          },
         },
       ],
     },
-    "backwardFilterOnPolymorphicEvery": Object {
+    "forwardAssociation": Object {
       "nodes": Array [
         Object {
-          "id": 2,
-        },
-      ],
-    },
-    "backwardFilterOnPolymorphicNone": Object {
-      "nodes": Array [
-        Object {
-          "id": 1,
-        },
-      ],
-    },
-    "backwardUniqueOnPolymorphic": Object {
-      "nodes": Array [
-        Object {
-          "id": 2,
-          "name": "forward2",
-        },
-      ],
-    },
-    "distinctFromInsensitive": Object {
-      "nodes": Array [
-        Object {
-          "id": 1,
+          "parentAsTaggable": Object {
+            "id": 1,
+          },
         },
         Object {
-          "id": 2,
+          "parentAsTaggable": Object {
+            "id": 2,
+          },
         },
         Object {
-          "id": 3,
-        },
-        Object {
-          "id": 4,
-        },
-        Object {
-          "id": 5,
-        },
-      ],
-    },
-    "forwardFilterOnPolymorphic": Object {
-      "nodes": Array [
-        Object {
-          "content": "tagged on parent2",
-          "id": 2,
-        },
-        Object {
-          "content": "2nd tagged on parent2",
-          "id": 3,
+          "parentAsTaggable": Object {
+            "id": 2,
+          },
         },
       ],
     },

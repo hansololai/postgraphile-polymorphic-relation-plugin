@@ -2,6 +2,7 @@
 set -e
 
 if [ -x ".env" ]; then
+  echo "exist"
   set -a
   . ./.env
   set +a
