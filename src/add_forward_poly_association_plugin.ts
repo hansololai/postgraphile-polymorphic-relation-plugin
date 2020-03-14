@@ -1,9 +1,8 @@
 import { SchemaBuilder, Options } from 'postgraphile';
 import { GraphileBuild } from 'postgraphile-plugin-connection-filter-polymorphic/dist/postgraphile_types';
-import { PgPolymorphicConstraints } from 'postgraphile-plugin-connection-filter-polymorphic'
+import { PgPolymorphicConstraints } from 'postgraphile-plugin-connection-filter-polymorphic';
 import { QueryBuilder } from 'graphile-build-pg';
 import { IGraphQLToolsResolveInfo } from 'graphql-tools';
-
 
 export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // const { pgSimpleCollections } = option;
@@ -30,7 +29,7 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
     }
     // error out if this is not defined, this plugin depend on another plugin.
     if (!Array.isArray(pgPolymorphicClassAndTargetModels)) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined, 
+      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined,
       you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
     }
 
@@ -120,9 +119,8 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
                   // is not constraint
                   type: RightTableType,
                   args: {},
-                  resolve: (data: any,
-                    _args: any,
-                    _context: any,
+                  resolve: (
+                    data: any, _args: any, _context: any,
                     resolveInfo: IGraphQLToolsResolveInfo) => {
                     const safeAlias = getSafeAliasFromResolveInfo(resolveInfo);
                     // return null;

@@ -4,7 +4,7 @@ import { QueryBuilder, PgClass } from 'graphile-build-pg';
 import { PgPolymorphicConstraints, PgPolymorphicConstraint } from 'postgraphile-plugin-connection-filter-polymorphic';
 export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // First add an inflector for polymorphic backrelation type name
-  builder.hook('inflection', (inflection) => ({
+  builder.hook('inflection', inflection => ({
     ...inflection,
     filterManyPolyType(table: PgClass, foreignTable: PgClass) {
       return `${this.filterManyType(table, foreignTable)}Poly`;
@@ -50,7 +50,7 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
     }
     // error out if this is not defined, this plugin depend on another plugin.
     if (!Array.isArray(pgPolymorphicClassAndTargetModels)) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined, 
+      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined,
       you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
     }
     const modelName = inflection.tableType(table);
@@ -58,7 +58,7 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
     // Find  all the forward relations with polymorphic
     const isConnection = true;
     const backwardPolyAssociation = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-      .filter((con) => con.to.includes(modelName))
+      .filter(con => con.to.includes(modelName))
       .reduce((memo, currentPoly) => {
         // const { name } = currentPoly;
         const foreignTable = introspectionResultsByKind.classById[currentPoly.from];
@@ -72,7 +72,7 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
           return memo;
         }
         const primaryConstraint = introspectionResultsByKind.constraint.find(
-          (attr) => attr.classId === table.id && attr.type === 'p',
+          attr => attr.classId === table.id && attr.type === 'p',
         );
         const primaryAttribute = primaryConstraint && primaryConstraint.keyAttributes;
         const sourceTableId = `${currentPoly.name}_id`;
@@ -84,8 +84,8 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
           // It must be an unique constraint
           if (c.type !== 'u') return false;
           // the two attributes must be xx_type, xx_id
-          if (!c.keyAttributes.find((a) => a.name === sourceTableId)) return false;
-          if (!c.keyAttributes.find((a) => a.name === sourceTableType)) return false;
+          if (!c.keyAttributes.find(a => a.name === sourceTableId)) return false;
+          if (!c.keyAttributes.find(a => a.name === sourceTableType)) return false;
           return true;
         });
         const fieldName = inflection.backwardRelationByPolymorphic(

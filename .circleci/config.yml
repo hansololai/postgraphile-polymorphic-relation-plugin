@@ -20,7 +20,7 @@ jobs:
           key: yarn-packages-{{ checksum "yarn.lock" }}
           paths:
             - ~/.cache/yarn
-      # - run: yarn lint
+      - run: yarn lint
       - run:
           command: yarn test
           environment:
@@ -45,7 +45,7 @@ jobs:
           key: yarn-packages-{{ checksum "yarn.lock" }}
           paths:
             - ~/.cache/yarn
-      # - run: yarn lint
+      - run: yarn lint
       - run:
           command: yarn test
           environment:
@@ -72,7 +72,7 @@ jobs:
           key: yarn-packages-{{ checksum "yarn.lock" }}
           paths:
             - ~/.cache/yarn
-      # - run: yarn lint
+      - run: yarn lint
       - run:
           name: Setup Code Climate test-reporter
           command: |
