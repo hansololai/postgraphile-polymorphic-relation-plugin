@@ -1,8 +1,9 @@
 # postgraphile-polymorphic-relation-plugin
- 
+[![hansololai](https://circleci.com/gh/hansololai/postgraphile-polymorphic-relation-plugin.svg?style=svg)](https://app.circleci.com/pipelines/github/hansololai/postgraphile-polymorphic-relation-plugin?branch=master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/7ad51fc0d6c2b9c5e416/maintainability)](https://codeclimate.com/github/hansololai/postgraphile-polymorphic-relation-plugin/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/7ad51fc0d6c2b9c5e416/test_coverage)](https://codeclimate.com/github/hansololai/postgraphile-polymorphic-relation-plugin/test_coverage)
-
+[![Known Vulnerabilities](https://snyk.io//test/github/hansololai/postgraphile-polymorphic-relation-plugin/badge.svg?targetFile=package.json)](https://snyk.io//test/github/hansololai/postgraphile-polymorphic-relation-plugin?targetFile=package.json)
+<!-- [![npm version](https://img.shields.io/npm/v/postgraphile-plugin-connection-filter-polymorphic)](https://www.npmjs.com/package/postgraphile-plugin-connection-filter-polymorphic) -->
 
 # Postgraphile Polymorphic Relation Plugin
 This plugin create the associations linked via a polymorphic association. Polymorphic associations are defined like this [in ruby on rails](https://guides.rubyonrails.org/association_basics.html#polymorphic-associations).
