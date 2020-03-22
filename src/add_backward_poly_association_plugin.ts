@@ -47,9 +47,10 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
     }
     // error out if this is not defined, this plugin depend on another plugin.
     if (!Array.isArray(pgPolymorphicClassAndTargetModels)) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined,
+      throw new Error(`The pgPolymorphicClassAndTargetModels or mapFieldToPgTable is not defined,
       you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
     }
+
     const modelName = inflection.tableType(table);
     // console.log(pgPolymorphicClassAndTargetModels);
     // Find  all the forward relations with polymorphic

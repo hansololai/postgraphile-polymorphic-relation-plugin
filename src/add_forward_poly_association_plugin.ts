@@ -18,7 +18,7 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
       inflection,
       pgQueryFromResolveData: queryFromResolveData,
       mapFieldToPgTable,
-      pgPolymorphicClassAndTargetModels = [],
+      pgPolymorphicClassAndTargetModels,
     } = build as GraphileBuild;
     const {
       scope: { isPgRowType, pgIntrospection: table },
@@ -28,8 +28,8 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
       return fields;
     }
     // error out if this is not defined, this plugin depend on another plugin.
-    if (!Array.isArray(pgPolymorphicClassAndTargetModels)) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined,
+    if (!Array.isArray(pgPolymorphicClassAndTargetModels) || !mapFieldToPgTable) {
+      throw new Error(`The pgPolymorphicClassAndTargetModels or mapFieldToPgTable is not defined,
       you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
     }
 
