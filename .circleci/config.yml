@@ -80,10 +80,11 @@ jobs:
           name: test
           command: |
             ./cc-test-reporter before-build
-            yarn test --coverage
+            yarn test --coverage --reporters=jest-junit --ci --maxWorkers=2
             ./cc-test-reporter after-build --exit-code $?
           environment:
             TEST_DATABASE_URL: postgres://circleci@localhost:5432/circle_test
+            JEST_JUNIT_OUTPUT: /tmp/test_result/jest/results.xml
       - persist_to_workspace:
           root: ~/
           paths: .
