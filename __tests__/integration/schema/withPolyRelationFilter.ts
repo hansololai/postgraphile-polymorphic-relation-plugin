@@ -40,3 +40,18 @@ test('using addBackwardPolyAssociation directly will throw error', async () => {
     // this should give error because the PgConnectionFilter plugin is not appended
   ).rejects.toThrowError();
 });
+
+test('prints a schema with the filter plugin will throw error', async () => {
+  await expect(
+    withPgClient(async (client) => {
+      await createPostGraphileSchema(client, ['p'], {
+        appendPlugins: [postgraphilePolyRelationCorePlugin],
+        graphileBuildOptions: {
+          connectionFilterPolymorphicForward: true,
+        },
+        disableDefaultMutations: true,
+      });
+    }),
+    // this should give error because the PgConnectionFilter plugin is not appended
+  ).rejects.toThrowError();
+});
