@@ -29,16 +29,17 @@
     "graphile-build": "4.6.0",
     "graphile-build-pg": "4.6.0",
     "jest": "^24.8.0",
+    "jest-junit": "^10.0.0",
     "pg": "^7.18.1",
     "postgraphile": "4.6.0",
     "postgraphile-plugin-connection-filter": "^1.0.0",
+    "semantic-release": "^17.0.4",
     "ts-jest": "^24.1.0",
     "ts-node": "^8.0.2",
     "tslint": "^5.18.0",
     "tslint-config-airbnb": "^5.11.1",
     "typescript": "^3.8.3",
-    "typescript-tslint-plugin": "^0.5.4",
-    "semantic-release": "^17.0.4"
+    "typescript-tslint-plugin": "^0.5.4"
   },
   "jest": {
     "testRegex": "__tests__/.*\\.test\\.(js|ts)$",
