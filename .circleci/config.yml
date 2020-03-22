@@ -80,7 +80,7 @@ jobs:
           name: test
           command: |
             ./cc-test-reporter before-build
-            yarn test --coverage --reporters=jest-junit --ci --maxWorkers=2
+            yarn test --coverage --reporters=jest-junit --ci
             ./cc-test-reporter after-build --exit-code $?
           environment:
             TEST_DATABASE_URL: postgres://circleci@localhost:5432/circle_test
