@@ -1,7 +1,6 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild } from './postgraphile_types';
+import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
 import { QueryBuilder, PgClass } from 'graphile-build-pg';
-import { PgPolymorphicConstraint, PgPolymorphicConstraints } from './define_polymorphic_constraint_plugin';
 
 export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // First add an inflector for polymorphic backrelation type name

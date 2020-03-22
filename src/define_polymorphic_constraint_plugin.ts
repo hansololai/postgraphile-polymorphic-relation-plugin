@@ -1,14 +1,7 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild } from './postgraphile_types';
+import { GraphileBuild, PgPolymorphicConstraints, PgPolymorphicConstraint } from './postgraphile_types';
 import { PgClass } from 'graphile-build-pg';
 import { canonical } from './utils';
-export interface PgPolymorphicConstraint {
-  name: string;
-  from: string; // classId
-  backwardAssociationName?: string; // field name for backward association. (default table name)
-  to: string[]; // due to limitation at the time, it is the ModelName array.
-}
-export type PgPolymorphicConstraints = PgPolymorphicConstraint[];
 
 /**
  * @description This plugin add an array named 'pgPolymorphicClassAndTargetModels' in build,

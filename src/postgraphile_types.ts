@@ -29,3 +29,21 @@ export interface GraphilePgIntrospection {
 export interface GraphileBuild extends Build {
   pgIntrospectionResultsByKind: GraphilePgIntrospection;
 }
+interface SimplePgTableIntrospect {
+  name: string;
+  id: string;
+  attributesMap: AttributesMap;
+}
+export interface AttributesMap {
+  [x: string]: PgAttribute | PgProc;
+}
+export type FieldToDBMap = {
+  [x: string]: SimplePgTableIntrospect;
+};
+export interface PgPolymorphicConstraint {
+  name: string;
+  from: string; // classId
+  backwardAssociationName?: string; // field name for backward association. (default table name)
+  to: string[]; // due to limitation at the time, it is the ModelName array.
+}
+export type PgPolymorphicConstraints = PgPolymorphicConstraint[];

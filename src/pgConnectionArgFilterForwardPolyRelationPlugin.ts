@@ -1,9 +1,8 @@
 import { SchemaBuilder } from 'postgraphile';
 import {
-  PgPolymorphicConstraints, PgPolymorphicConstraint,
-} from './define_polymorphic_constraint_plugin';
+  PgPolymorphicConstraints, PgPolymorphicConstraint, GraphileBuild,
+} from './postgraphile_types';
 import { addField, ResolveFieldFunc } from './pgConnectionArgFilterBackwardPolyRelationPlugin';
-import { GraphileBuild } from './postgraphile_types';
 import { PgClass, PgAttribute } from 'graphile-build-pg';
 
 export interface ForwardPolyRelationSpecType {

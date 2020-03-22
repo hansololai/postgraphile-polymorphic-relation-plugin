@@ -1,17 +1,5 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild } from './postgraphile_types';
-import { PgAttribute, PgProc } from 'graphile-build-pg';
-interface SimplePgTableIntrospect {
-  name: string;
-  id: string;
-  attributesMap: AttributesMap;
-}
-interface AttributesMap {
-  [x: string]: PgAttribute | PgProc;
-}
-export type FieldToDBMap = {
-  [x: string]: SimplePgTableIntrospect;
-};
+import { GraphileBuild, FieldToDBMap, AttributesMap } from './postgraphile_types';
 
 export const addModelTableMappingPlugin = (builder: SchemaBuilder, options: Options) => {
   const { pgSchemas = [] } = options as any;
@@ -42,7 +30,7 @@ export const addModelTableMappingPlugin = (builder: SchemaBuilder, options: Opti
           return a;
         }, {});
       // The Model Name points to this pg object
-      const curTable: SimplePgTableIntrospect = {
+      const curTable: FieldToDBMap[string] = {
         name: cur.name,
         id: cur.id,
         attributesMap: cur.attributes.reduce((allAtt: AttributesMap, curA) => {
