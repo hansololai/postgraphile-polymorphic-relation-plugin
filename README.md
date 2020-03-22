@@ -130,6 +130,7 @@ createPostGraphileSchema(pgClient, [schemaName],{
   ]
 })
 ```
+
 The npm package exposes every intermediate plugins such as 
 `addModelTableMappingPlugin`: add the model to table mapping dictionary.
 `definePolymorphicCustom`: add the polymorphic definition in Build object, used by other plugin
