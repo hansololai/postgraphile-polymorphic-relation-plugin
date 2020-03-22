@@ -72,9 +72,49 @@ allUsers{
   }
 }
 ```
+### Also provide a connectionFilter
+In the above example, 
+And a record in taggs is 
+```
+id: 50
+taggable_type: 'User'
+taggable_id: 1
+```
+This means the tag(id:50) is connected to User record of id:1. 
+
+If you want to filter the connections like the following:
+```graphql
+allTaggs(filter:{
+  userAsTaggable:{id:1} // This does not exist in regular connection filter
+}){
+  nodes{
+    id
+  }
+}
+```
+This plugin will create the forward relationship. (this `userAsTaggable`) field, and also the backward relationship. (the `taggs` field on User Connection, and other connections that is associated). Also if the `taggable_type` and `taggable_id` are has an unique constraint. The backward filter is not a single object filter, instead of a multi-field, which consist of three fields `some`,`every`,`none`. 
 
 ## Usage
 Requires postgraphile@4.2+. 
+### Usage of connection filter
+To enable this function, it requires postgraphile@4.2+ and the following plugins appended prior to this plugin:
+- `postgraphile-plugin-connection-filter@^1.0.0`
+
+Also an build option is needed. like so
+```js
+createPostGraphileSchema(client, ['p'], {
+        appendPlugins: [
+          // This is important to be added if the two options are true
+          PgConnectionFilterPlugin, 
+          postgraphilePolyRelationCorePlugin,
+        ],
+        graphileBuildOptions: {
+          connectionFilterPolymorphicForward: true,
+          connectionFilterPolymorphicBackward: true,
+        },
+      });
+```
+The two options will create the filter options. 
 
 ### Install it
 ```
@@ -90,9 +130,11 @@ createPostGraphileSchema(pgClient, [schemaName],{
   ]
 })
 ```
-
-The two important plugins in here are `addForwardPolyAssociation` and `addBackwardPolyAssociation` plugins, which are bundled in the `postgraphilePolyRelationCorePlugin`. The bundle uses 2 extra plugins to define the polymorphic definitions. These two plugins are in a different plugin. see [`postgraphile-connection-filter-polymorphic`](https://github.com/hansololai/postgraphile-connection-filter-polymorphic). This plugin simply require it in dependency and bundle them
-in the core plugin. If both plugin are used the definition will simply be defined twice. 
+The npm package exposes every intermediate plugins such as 
+`addModelTableMappingPlugin`: add the model to table mapping dictionary.
+`definePolymorphicCustom`: add the polymorphic definition in Build object, used by other plugin
+`addForwardPolyAssociation`: Use the defined polymorphic objects to construct forward relation,
+`addBackwardPolyAssociation`: Use the defined polymorphic objects to construct backward relation, 
 
 ## Development
 
