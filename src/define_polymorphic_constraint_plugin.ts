@@ -1,6 +1,7 @@
 import { SchemaBuilder, Options } from 'postgraphile';
 import { GraphileBuild } from './postgraphile_types';
 import { PgClass } from 'graphile-build-pg';
+import { canonical } from './utils';
 export interface PgPolymorphicConstraint {
   name: string;
   from: string; // classId
@@ -55,9 +56,9 @@ export const definePolymorphicCustom = (builder: SchemaBuilder, options: Options
           } = attribute;
           let targetTables: string[] = [];
           if (!Array.isArray(polymorphicTo)) {
-            targetTables = [polymorphicTo];
+            targetTables = [canonical(polymorphicTo)];
           } else {
-            targetTables = polymorphicTo;
+            targetTables = polymorphicTo.map(t => canonical(t));
           }
           targetTables = Array.from(new Set<string>(targetTables));
           const polymorphicKey = name.substring(0, name.length - 5);

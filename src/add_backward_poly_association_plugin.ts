@@ -3,8 +3,6 @@ import { GraphileBuild } from 'postgraphile-plugin-connection-filter-polymorphic
 import { QueryBuilder, PgClass } from 'graphile-build-pg';
 import { PgPolymorphicConstraints, PgPolymorphicConstraint } from 'postgraphile-plugin-connection-filter-polymorphic';
 
-import { canonical } from './utils';
-
 export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // First add an inflector for polymorphic backrelation type name
   builder.hook('inflection', inflection => ({
@@ -59,10 +57,8 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
     // Find  all the forward relations with polymorphic
     const isConnection = true;
     const backwardPolyAssociation = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-      .filter(con => {
-        const r = con.to.map(canonical).includes(canonical(modelName))
-       
-        return r;
+      .filter((con) => {
+        return con.to.includes(modelName);
       })
       .reduce((memo, currentPoly) => {
         // const { name } = currentPoly;

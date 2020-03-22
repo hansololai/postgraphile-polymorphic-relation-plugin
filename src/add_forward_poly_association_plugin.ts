@@ -4,8 +4,6 @@ import { PgPolymorphicConstraints } from 'postgraphile-plugin-connection-filter-
 import { QueryBuilder } from 'graphile-build-pg';
 import { IGraphQLToolsResolveInfo } from 'graphql-tools';
 
-import { canonical } from './utils';
-
 export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // const { pgSimpleCollections } = option;
   // const hasConnections = pgSimpleCollections !== 'only';
@@ -39,21 +37,19 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
     // Find  all the forward relations with polymorphic
     const forwardPolyRelationSpec = (
       <PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-      .filter(con => canonical(con.from) === canonical(table.id))
+      .filter(con => con.from === table.id)
       .reduce((memo, currentPoly) => {
         const { name } = currentPoly;
         const sourceTableId = `${name}_id`;
         const sourceTableType = `${name}_type`;
         const fieldsPerPolymorphicConstraint = currentPoly.to.reduce((acc, mName) => {
-          const tableName:string = Object.keys(mapFieldToPgTable).find(n => canonical(n) == canonical(mName)) || mName;
-          
-          const pgTableSimple = mapFieldToPgTable[tableName];
+          const pgTableSimple = mapFieldToPgTable[mName];
 
           if (!pgTableSimple) return acc;
           const foreignTable = introspectionResultsByKind.classById[pgTableSimple.id];
           const fieldName = `${inflection.forwardRelationByPolymorphic(foreignTable, name)}`;
           const foreignPrimaryConstraint = introspectionResultsByKind.constraint.find(
-            attr =>  attr.classId === foreignTable.id && attr.type === 'p'
+            attr => attr.classId === foreignTable.id && attr.type === 'p',
           );
           if (!foreignPrimaryConstraint) {
             return acc;
