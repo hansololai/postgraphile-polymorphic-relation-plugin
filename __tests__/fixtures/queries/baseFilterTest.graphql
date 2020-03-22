@@ -23,4 +23,62 @@ query text {
       }
     }
   }
+  distinctFromInsensitive: allFilterables(filter:  {}) {
+    nodes{
+      id
+    }
+  }
+  backwardFilterOnPolymorphic: allParents(filter:{
+    taggs:{
+      some:{
+        content:{equalTo:"tagged on parent1"}
+      }
+    }
+  }){
+    nodes{
+      id
+    }
+  }
+  backwardFilterOnPolymorphicEvery: allParents(filter:{
+    taggs:{
+      every:{
+        content:{includes:"parent2"}
+      }
+    }
+  }){
+    nodes{
+      id
+    }
+  }
+  backwardFilterOnPolymorphicNone: allParents(filter:{
+    taggs:{
+      none:{
+        content:{includes:"parent2"}
+      }
+    }
+  }){
+    nodes{
+      id
+    }
+  } 
+  forwardFilterOnPolymorphic: allTaggs(filter:{
+    parentAsTaggable:{
+      id:{equalTo:2}
+    }
+  }){
+    nodes{
+      id
+      content
+    }
+  }
+  backwardUniqueOnPolymorphic: allForwards(filter:{
+    uniqueTagg:{
+      content:{equalTo:"unique tagged on forward2"}
+    }
+  }){
+    nodes{
+      id
+      name
+    }
+  }
 }

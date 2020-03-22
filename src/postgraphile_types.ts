@@ -7,8 +7,8 @@ import {
   PgExtension,
   PgType,
   PgNamespace,
+  PgIndex,
 } from 'graphile-build-pg';
-import { PgIndex } from 'graphile-build-pg/node8plus/plugins/PgIntrospectionPlugin';
 
 export interface GraphilePgIntrospection {
   __pgVersion: number;
