@@ -1,7 +1,7 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild } from 'postgraphile-plugin-connection-filter-polymorphic/dist/postgraphile_types';
+import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
 import { QueryBuilder, PgClass } from 'graphile-build-pg';
-import { PgPolymorphicConstraints, PgPolymorphicConstraint } from 'postgraphile-plugin-connection-filter-polymorphic';
+
 export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // First add an inflector for polymorphic backrelation type name
   builder.hook('inflection', inflection => ({
@@ -47,15 +47,18 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
     }
     // error out if this is not defined, this plugin depend on another plugin.
     if (!Array.isArray(pgPolymorphicClassAndTargetModels)) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined,
+      throw new Error(`The pgPolymorphicClassAndTargetModels or mapFieldToPgTable is not defined,
       you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
     }
+
     const modelName = inflection.tableType(table);
     // console.log(pgPolymorphicClassAndTargetModels);
     // Find  all the forward relations with polymorphic
     const isConnection = true;
     const backwardPolyAssociation = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-      .filter(con => con.to.includes(modelName))
+      .filter((con) => {
+        return con.to.includes(modelName);
+      })
       .reduce((memo, currentPoly) => {
         // const { name } = currentPoly;
         const foreignTable = introspectionResultsByKind.classById[currentPoly.from];

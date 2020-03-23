@@ -1,8 +1,7 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild } from 'postgraphile-plugin-connection-filter-polymorphic/dist/postgraphile_types';
-import { PgPolymorphicConstraints } from 'postgraphile-plugin-connection-filter-polymorphic';
 import { QueryBuilder } from 'graphile-build-pg';
 import { IGraphQLToolsResolveInfo } from 'graphql-tools';
+import { GraphileBuild, PgPolymorphicConstraints } from './postgraphile_types';
 
 export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // const { pgSimpleCollections } = option;
@@ -18,7 +17,7 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
       inflection,
       pgQueryFromResolveData: queryFromResolveData,
       mapFieldToPgTable,
-      pgPolymorphicClassAndTargetModels = [],
+      pgPolymorphicClassAndTargetModels,
     } = build as GraphileBuild;
     const {
       scope: { isPgRowType, pgIntrospection: table },
@@ -28,8 +27,8 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
       return fields;
     }
     // error out if this is not defined, this plugin depend on another plugin.
-    if (!Array.isArray(pgPolymorphicClassAndTargetModels)) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels is not defined,
+    if (!Array.isArray(pgPolymorphicClassAndTargetModels) || !mapFieldToPgTable) {
+      throw new Error(`The pgPolymorphicClassAndTargetModels or mapFieldToPgTable is not defined,
       you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
     }
 
@@ -44,6 +43,7 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
         const sourceTableType = `${name}_type`;
         const fieldsPerPolymorphicConstraint = currentPoly.to.reduce((acc, mName) => {
           const pgTableSimple = mapFieldToPgTable[mName];
+
           if (!pgTableSimple) return acc;
           const foreignTable = introspectionResultsByKind.classById[pgTableSimple.id];
           const fieldName = `${inflection.forwardRelationByPolymorphic(foreignTable, name)}`;

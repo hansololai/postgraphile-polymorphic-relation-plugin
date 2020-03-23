@@ -5,6 +5,7 @@ import { readdirSync, readFile as rawReadFile } from 'fs';
 import { resolve as resolvePath } from 'path';
 import { postgraphilePolyRelationCorePlugin } from '../../src';
 import { printSchema } from 'graphql/utilities';
+import PgConnectionFilterPlugin from 'postgraphile-plugin-connection-filter';
 // import debug from 'debug';
 
 // const debug = debugger('graphile-build:schema');
@@ -35,8 +36,15 @@ beforeAll(() => {
     ] = await Promise.all([
       createPostGraphileSchema(pgClient, ['p'], {
         appendPlugins: [
-          postgraphilePolyRelationCorePlugin
+          PgConnectionFilterPlugin,
+          postgraphilePolyRelationCorePlugin,
         ],
+        graphileBuildOptions: {
+          connectionFilterPolymorphicForward: true,
+          connectionFilterRelations: true,
+          connectionFilterAllowNullInput: true,
+          connectionFilterAllowEmptyObjectInput: true,
+        },
       }),
     ]);
 

@@ -49,6 +49,54 @@ Object {
         },
       ],
     },
+    "backwardFilterOnPolymorphic": Object {
+      "nodes": Array [
+        Object {
+          "id": 1,
+        },
+      ],
+    },
+    "backwardFilterOnPolymorphicEvery": Object {
+      "nodes": Array [
+        Object {
+          "id": 2,
+        },
+      ],
+    },
+    "backwardFilterOnPolymorphicNone": Object {
+      "nodes": Array [
+        Object {
+          "id": 1,
+        },
+      ],
+    },
+    "backwardUniqueOnPolymorphic": Object {
+      "nodes": Array [
+        Object {
+          "id": 2,
+          "name": "forward2",
+        },
+      ],
+    },
+    "distinctFromInsensitive": Object {
+      "nodes": Array [
+        Object {
+          "id": 1,
+        },
+        Object {
+          "id": 2,
+        },
+        Object {
+          "id": 3,
+        },
+        Object {
+          "id": 4,
+        },
+        Object {
+          "id": 5,
+        },
+      ],
+    },
     "forwardAssociation": Object {
       "nodes": Array [
         Object {
@@ -65,6 +113,18 @@ Object {
           "parentAsTaggable": Object {
             "id": 2,
           },
+        },
+      ],
+    },
+    "forwardFilterOnPolymorphic": Object {
+      "nodes": Array [
+        Object {
+          "content": "tagged on parent2",
+          "id": 2,
+        },
+        Object {
+          "content": "2nd tagged on parent2",
+          "id": 3,
         },
       ],
     },

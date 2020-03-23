@@ -25,7 +25,7 @@ create table p.unique_taggs
   "content" text
 );
 
-comment on column p.unique_taggs.unique_taggable_type is E'@isPolymorphic\n@polymorphicTo Parent\n@polymorphicTo Parent\n@polymorphicTo Forward';
+comment on column p.unique_taggs.unique_taggable_type is E'@isPolymorphic\n@polymorphicTo Parent\n@polymorphicTo Parent\n@polymorphicTo API::Forward';
 alter table p.unique_taggs add constraint unique_tag_type_is_unique UNIQUE (unique_taggable_id,unique_taggable_type);
 
 create table p.parent
