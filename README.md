@@ -132,11 +132,16 @@ createPostGraphileSchema(pgClient, [schemaName],{
 ```
 
 The npm package exposes every intermediate plugins such as 
+
 `addModelTableMappingPlugin`: add the model to table mapping dictionary.
+
 `definePolymorphicCustom`: add the polymorphic definition in Build object, used by other plugin
+
 `addForwardPolyAssociation`: Use the defined polymorphic objects to construct forward relation,
+
 `addBackwardPolyAssociation`: Use the defined polymorphic objects to construct backward relation, 
 
+If you feel like it, you could use them individually, or just use one that include them all. The `postgraphilePolyRelationCorePlugin`.
 ## Development
 
 To establish a test environment, create an empty PostgreSQL database and set a `TEST_DATABASE_URL` environment variable with your database connection string.
