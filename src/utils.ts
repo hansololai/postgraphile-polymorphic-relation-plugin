@@ -37,6 +37,7 @@ export const generateFieldWithHookFunc = (
 ) => {
   const {
     pgSql: sql,
+    graphql: { GraphQLNonNull, GraphQLList },
     pgGetGqlTypeByTypeIdAndModifier,
     pgQueryFromResolveData: queryFromResolveData,
     getSafeAliasFromAlias,
@@ -51,7 +52,17 @@ export const generateFieldWithHookFunc = (
   const innerTableConnectionType = getTypeByName(
     inflection.connection(innerTable.name),
   );
-  const returnType = (!isUnique && isConnection) ? innerTableConnectionType : innerTableType;
+  let returnType = innerTableType;
+  let fieldType = innerTableType;
+  if (!isUnique) {
+    if (isConnection) {
+      returnType = innerTableConnectionType;
+      fieldType = new GraphQLNonNull(innerTableConnectionType);
+    } else {
+      // using simple connection
+      fieldType = new GraphQLList(new GraphQLNonNull(innerTableConnectionType));
+    }
+  }
   const rightTableTypeName = inflection.tableType(innerTable);
 
   return ({ getDataFromParsedResolveInfoFragment, addDataGenerator }: any) => {
@@ -100,7 +111,7 @@ export const generateFieldWithHookFunc = (
       // type: new GraphQLNonNull(RightTableType),
       // This maybe should be nullable? because polymorphic foreign key
       // is not constraint
-      type: innerTableType,
+      type: fieldType,
       args: {},
       resolve: (
         data: any, _args: any, _context: any,

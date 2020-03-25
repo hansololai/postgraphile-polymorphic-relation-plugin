@@ -94,6 +94,8 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
               });
             }
           },
+          isForeignKeyUnique,
+          isConnection,
         );
         return {
           ...memo,
