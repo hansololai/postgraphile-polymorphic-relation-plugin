@@ -124,13 +124,9 @@ export const generateFieldWithHookFunc = (
   };
 };
 export const getPrimaryKey = (
-  build: GraphileBuild,
   table: PgClass) => {
-  const {
-    pgIntrospectionResultsByKind: { constraint },
-  } = build;
-  const foreignPrimaryConstraint = constraint.find(
-    attr => attr.classId === table.id && attr.type === 'p',
+  const foreignPrimaryConstraint = table.constraints.find(
+    attr => attr.type === 'p',
   );
   if (!foreignPrimaryConstraint) return null;
   return foreignPrimaryConstraint.keyAttributes[0];

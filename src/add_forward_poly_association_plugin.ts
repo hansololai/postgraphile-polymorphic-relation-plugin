@@ -38,7 +38,7 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
           if (!pgTableSimple) return acc;
           const foreignTable = classById[pgTableSimple.id];
           const fieldName = `${inflection.forwardRelationByPolymorphic(foreignTable, name)}`;
-          const foreignPrimaryKey = getPrimaryKey(build as GraphileBuild, foreignTable);
+          const foreignPrimaryKey = getPrimaryKey(foreignTable);
           if (!foreignPrimaryKey) return acc;
           const fieldFunction = generateFieldWithHookFunc(
             build as GraphileBuild,

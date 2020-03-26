@@ -56,7 +56,7 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
         if (omit(foreignTable, 'read')) {
           return memo;
         }
-        const tablePKey = getPrimaryKey(build as GraphileBuild, table);
+        const tablePKey = getPrimaryKey(table);
         const isForeignKeyUnique = polyForeignKeyUnique(build as GraphileBuild,
           foreignTable, currentPoly);
         const fieldName = inflection.backwardRelationByPolymorphic(

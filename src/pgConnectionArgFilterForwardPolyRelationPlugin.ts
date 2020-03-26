@@ -4,6 +4,7 @@ import {
 } from './postgraphile_types';
 import { addField, ResolveFieldFunc } from './pgConnectionArgFilterBackwardPolyRelationPlugin';
 import { PgClass, PgAttribute } from 'graphile-build-pg';
+import { getPrimaryKey } from './utils';
 
 export interface ForwardPolyRelationSpecType {
   table: PgClass;
@@ -91,15 +92,13 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
               const foreignTable = classById[curForeignTable];
               if (!foreignTable) return memo;
               const fieldName = inflection.forwardRelationByPolymorphic(foreignTable, cur.name);
-              const foreignPrimaryConstraint = introspectionResultsByKind.constraint.find(
-                attr => attr.classId === foreignTable.id && attr.type === 'p',
-              );
-              if (foreignPrimaryConstraint && foreignPrimaryConstraint.keyAttributes[0]) {
+              const pKey = getPrimaryKey(foreignTable);
+              if (pKey) {
                 memo.push({
                   table,
                   foreignTable,
                   fieldName,
-                  foreignPrimaryKey: foreignPrimaryConstraint.keyAttributes[0],
+                  foreignPrimaryKey: pKey,
                   constraint: currentPoly,
                 });
               }
