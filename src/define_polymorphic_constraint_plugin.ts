@@ -1,6 +1,5 @@
 import { SchemaBuilder, Options } from 'postgraphile';
 import { GraphileBuild, PgPolymorphicConstraints, PgPolymorphicConstraint } from './postgraphile_types';
-import { PgClass } from 'graphile-build-pg';
 import { canonical } from './utils';
 
 /**
@@ -17,13 +16,7 @@ import { canonical } from './utils';
  * @author Han Lai
  */
 export const definePolymorphicCustom = (builder: SchemaBuilder, options: Options) => {
-  // First add an inflector for polymorphic backrelation type name
-  builder.hook('inflection', inflection => ({
-    ...inflection,
-    forwardRelationByPolymorphic(table: PgClass, polymorphicName: string) {
-      return this.camelCase(`${this.singularize(table.name)}-as-${polymorphicName}`);
-    },
-  }));
+
   builder.hook('build', (build) => {
     const {
       pgIntrospectionResultsByKind: { class: pgClasses, attributeByClassIdAndNum },

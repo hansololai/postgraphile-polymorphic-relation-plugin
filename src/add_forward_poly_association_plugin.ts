@@ -1,21 +1,20 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { QueryBuilder } from 'graphile-build-pg';
-import { IGraphQLToolsResolveInfo } from 'graphql-tools';
+import { PgClass } from 'graphile-build-pg';
 import { GraphileBuild, PgPolymorphicConstraints } from './postgraphile_types';
+import { validatePrerequisit, generateFieldWithHookFunc, polymorphicCondition, getPrimaryKey } from './utils';
 
 export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
-  // const { pgSimpleCollections } = option;
-  // const hasConnections = pgSimpleCollections !== 'only';
+  builder.hook('inflection', inflection => ({
+    ...inflection,
+    forwardRelationByPolymorphic(table: PgClass, polymorphicName: string) {
+      return this.camelCase(`${this.singularize(table.name)}-as-${polymorphicName}`);
+    },
+  }));
   builder.hook('GraphQLObjectType:fields', (fields, build, context) => {
     const {
       extend,
-      pgGetGqlTypeByTypeIdAndModifier,
-      pgIntrospectionResultsByKind: introspectionResultsByKind,
-      pgSql: sql,
-      getSafeAliasFromResolveInfo,
-      getSafeAliasFromAlias,
+      pgIntrospectionResultsByKind: { classById },
       inflection,
-      pgQueryFromResolveData: queryFromResolveData,
       mapFieldToPgTable,
       pgPolymorphicClassAndTargetModels,
     } = build as GraphileBuild;
@@ -26,108 +25,34 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
     if (!isPgRowType || !table || table.kind !== 'class') {
       return fields;
     }
-    // error out if this is not defined, this plugin depend on another plugin.
-    if (!Array.isArray(pgPolymorphicClassAndTargetModels) || !mapFieldToPgTable) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels or mapFieldToPgTable is not defined,
-      you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
-    }
+    validatePrerequisit(build as GraphileBuild);
 
-    // console.log(pgPolymorphicClassAndTargetModels);
-    // Find  all the forward relations with polymorphic
     const forwardPolyRelationSpec = (
       <PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
       .filter(con => con.from === table.id)
       .reduce((memo, currentPoly) => {
         const { name } = currentPoly;
-        const sourceTableId = `${name}_id`;
-        const sourceTableType = `${name}_type`;
         const fieldsPerPolymorphicConstraint = currentPoly.to.reduce((acc, mName) => {
           const pgTableSimple = mapFieldToPgTable[mName];
 
           if (!pgTableSimple) return acc;
-          const foreignTable = introspectionResultsByKind.classById[pgTableSimple.id];
+          const foreignTable = classById[pgTableSimple.id];
           const fieldName = `${inflection.forwardRelationByPolymorphic(foreignTable, name)}`;
-          const foreignPrimaryConstraint = introspectionResultsByKind.constraint.find(
-            attr => attr.classId === foreignTable.id && attr.type === 'p',
+          const foreignPrimaryKey = getPrimaryKey(foreignTable);
+          if (!foreignPrimaryKey) return acc;
+          const fieldFunction = generateFieldWithHookFunc(
+            build as GraphileBuild,
+            foreignTable,
+            (qb1, qb2) => {
+              qb2.where(polymorphicCondition(build as GraphileBuild,
+                currentPoly, qb1, qb2, mName, foreignPrimaryKey));
+            },
           );
-          if (!foreignPrimaryConstraint) {
-            return acc;
-          }
-          const foreignPrimaryKey = foreignPrimaryConstraint.keyAttributes[0];
-          const rightTableTypeName = inflection.tableType(foreignTable);
-          const RightTableType = pgGetGqlTypeByTypeIdAndModifier(
-            foreignTable.type.id,
-            null,
-          );
-
-          if (!RightTableType) {
-            throw new Error(
-              `Could not determine type for table with id ${foreignTable.id}`,
-            );
-          }
           return {
             ...acc,
             [fieldName]: fieldWithHooks(
               fieldName,
-              ({ getDataFromParsedResolveInfoFragment, addDataGenerator }: any) => {
-                addDataGenerator((parsedResolveInfoFragment: any) => {
-                  return {
-                    pgQuery: (queryBuilder: QueryBuilder) => {
-                      queryBuilder.select(() => {
-                        const resolveData = getDataFromParsedResolveInfoFragment(
-                          parsedResolveInfoFragment,
-                          RightTableType,
-                        );
-                        const rightTableAlias = sql.identifier(Symbol());
-                        const leftTableAlias = queryBuilder.getTableAlias();
-                        const query = queryFromResolveData(
-                          sql.identifier(
-                            foreignTable.namespace.name,
-                            foreignTable.name,
-                          ),
-                          rightTableAlias,
-                          resolveData,
-                          {
-                            useAsterisk: false, // Because it's only a single relation, no need
-                            asJson: true,
-                            addNullCase: true,
-                            withPagination: false,
-                          },
-                          (innerQueryBuilder: any) => {
-                            innerQueryBuilder.parentQueryBuilder = queryBuilder;
-                            innerQueryBuilder.where(
-                              sql.query`(${sql.fragment`${rightTableAlias}.${sql.identifier(
-                                foreignPrimaryKey.name,
-                              )} = ${sql.fragment`${leftTableAlias}.${sql.identifier(
-                                sourceTableId,
-                              )}`}`}) and (
-                              ${sql.fragment`${queryBuilder.getTableAlias()}.${sql.identifier(
-                                sourceTableType,
-                              )} = ${sql.value(mName)}`})`,
-                            );
-                          },
-                        );
-                        return sql.fragment`(${query})`;
-                      }, getSafeAliasFromAlias(parsedResolveInfoFragment.alias));
-                    },
-                  };
-                });
-                return {
-                  description: `Reads through a \`${rightTableTypeName}\`.`,
-                  // type: new GraphQLNonNull(RightTableType),
-                  // This maybe should be nullable? because polymorphic foreign key
-                  // is not constraint
-                  type: RightTableType,
-                  args: {},
-                  resolve: (
-                    data: any, _args: any, _context: any,
-                    resolveInfo: IGraphQLToolsResolveInfo) => {
-                    const safeAlias = getSafeAliasFromResolveInfo(resolveInfo);
-                    // return null;
-                    return data[safeAlias];
-                  },
-                };
-              },
+              fieldFunction,
               {
                 isPgForwardPolymorphicField: true,
                 pgFieldIntrospection: foreignTable,

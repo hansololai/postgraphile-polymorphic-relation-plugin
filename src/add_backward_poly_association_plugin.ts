@@ -1,6 +1,10 @@
 import { SchemaBuilder, Options } from 'postgraphile';
 import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
-import { QueryBuilder, PgClass } from 'graphile-build-pg';
+import { PgClass } from 'graphile-build-pg';
+import {
+  validatePrerequisit, polyForeignKeyUnique, generateFieldWithHookFunc,
+  polymorphicCondition, getPrimaryKey,
+} from './utils';
 
 export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   // First add an inflector for polymorphic backrelation type name
@@ -23,18 +27,10 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
   builder.hook('GraphQLObjectType:fields', (fields, build, context) => {
     const {
       extend,
-      getTypeByName,
-      pgGetGqlTypeByTypeIdAndModifier,
       pgIntrospectionResultsByKind: introspectionResultsByKind,
       pgSql: sql,
-      getSafeAliasFromResolveInfo,
-      getSafeAliasFromAlias,
-      graphql: { GraphQLNonNull, GraphQLList },
       inflection,
-      pgQueryFromResolveData: queryFromResolveData,
       pgOmit: omit,
-      // describePgEntity,
-      // mapFieldToPgTable,
       pgPolymorphicClassAndTargetModels,
     } = build as GraphileBuild;
     const {
@@ -45,14 +41,9 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
     if (!isPgRowType || !table || table.kind !== 'class') {
       return fields;
     }
-    // error out if this is not defined, this plugin depend on another plugin.
-    if (!Array.isArray(pgPolymorphicClassAndTargetModels)) {
-      throw new Error(`The pgPolymorphicClassAndTargetModels or mapFieldToPgTable is not defined,
-      you need to use addModelTableMappingPlugin and definePolymorphicCustom before this`);
-    }
+    validatePrerequisit(build as GraphileBuild);
 
     const modelName = inflection.tableType(table);
-    // console.log(pgPolymorphicClassAndTargetModels);
     // Find  all the forward relations with polymorphic
     const isConnection = true;
     const backwardPolyAssociation = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
@@ -62,145 +53,55 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
       .reduce((memo, currentPoly) => {
         // const { name } = currentPoly;
         const foreignTable = introspectionResultsByKind.classById[currentPoly.from];
-        if (!foreignTable) {
-          return memo;
-          // throw new Error(
-          //   `Could not find the foreign table (polymorphicName: ${currentPoly.name})`,
-          // );
-        }
         if (omit(foreignTable, 'read')) {
           return memo;
         }
-        const primaryConstraint = introspectionResultsByKind.constraint.find(
-          attr => attr.classId === table.id && attr.type === 'p',
-        );
-        const primaryAttribute = primaryConstraint && primaryConstraint.keyAttributes;
-        const sourceTableId = `${currentPoly.name}_id`;
-        const sourceTableType = `${currentPoly.name}_type`;
-        const isForeignKeyUnique = introspectionResultsByKind.constraint.find((c) => {
-          if (c.classId !== foreignTable.id) return false;
-          // Only if the xxx_type, xxx_id are unique constraint
-          if (c.keyAttributeNums.length !== 2) return false;
-          // It must be an unique constraint
-          if (c.type !== 'u') return false;
-          // the two attributes must be xx_type, xx_id
-          if (!c.keyAttributes.find(a => a.name === sourceTableId)) return false;
-          if (!c.keyAttributes.find(a => a.name === sourceTableType)) return false;
-          return true;
-        });
+        const tablePKey = getPrimaryKey(table);
+        const isForeignKeyUnique = polyForeignKeyUnique(build as GraphileBuild,
+          foreignTable, currentPoly);
         const fieldName = inflection.backwardRelationByPolymorphic(
           foreignTable,
           currentPoly,
           isForeignKeyUnique,
         );
-        // const fieldName = isForeignKeyUnique
-        //   ? `${inflection.camelCase(inflection.singularize(foreignTable.name))}`
-        //   : `${inflection.camelCase(inflection.pluralize(foreignTable.name))}`;
-        const foreignTableType = pgGetGqlTypeByTypeIdAndModifier(foreignTable.type.id, null);
-        const foreignTableConnectionType = getTypeByName(
-          inflection.connection(foreignTableType.name),
-        );
-        if (!primaryAttribute || primaryAttribute.length < 1) {
+        if (!tablePKey) {
           return memo;
         }
-
+        const fieldFunction = generateFieldWithHookFunc(
+          build as GraphileBuild,
+          foreignTable,
+          (qBuilder, innerBuilder) => {
+            innerBuilder.where(polymorphicCondition(build as GraphileBuild,
+              currentPoly, innerBuilder, qBuilder, modelName, tablePKey));
+            if (!isForeignKeyUnique) {
+              innerBuilder.beforeLock('orderBy', () => {
+                // append order by primary key to the list of orders
+                if (!innerBuilder.isOrderUnique(false)) {
+                  (innerBuilder as any).data.cursorPrefix = ['primary_key_asc'];
+                  if (foreignTable.primaryKeyConstraint) {
+                    const fPrimaryKeys =
+                      foreignTable.primaryKeyConstraint.keyAttributes;
+                    fPrimaryKeys.forEach((key) => {
+                      innerBuilder.orderBy(
+                        sql.fragment`${innerBuilder.getTableAlias()}.
+                      ${sql.identifier(key.name)}`,
+                        true,
+                      );
+                    });
+                  }
+                }
+                innerBuilder.setOrderIsUnique();
+              });
+            }
+          },
+          isForeignKeyUnique,
+          isConnection,
+        );
         return {
           ...memo,
           [fieldName]: fieldWithHooks(
             fieldName,
-            (p: any) => {
-              const { getDataFromParsedResolveInfoFragment, addDataGenerator } = p;
-              addDataGenerator((parsedResolveInfoFragment: any) => {
-                return {
-                  pgQuery: (queryBuilder: QueryBuilder) => {
-                    queryBuilder.select(() => {
-                      const resolveData = getDataFromParsedResolveInfoFragment(
-                        parsedResolveInfoFragment,
-                        !isForeignKeyUnique && isConnection
-                          ? foreignTableConnectionType
-                          : foreignTableType,
-                      );
-                      const foreignTableAlis = sql.identifier(Symbol());
-                      const tableAlias = queryBuilder.getTableAlias();
-                      const queryOptions = isForeignKeyUnique
-                        ? {
-                          useAsterisk: false, // Because it's only a single relation, no need
-                          asJson: true,
-                          addNullCase: true,
-                          withPagination: false,
-                        }
-                        : {
-                          useAsterisk: table.canUseAsterisk,
-                          withPagination: isConnection,
-                          withPaginationAsFields: false,
-                          asJsonAggregate: !isConnection,
-                        };
-                      const query = queryFromResolveData(
-                        sql.identifier(foreignTable.namespace.name, foreignTable.name),
-                        foreignTableAlis,
-                        resolveData,
-                        queryOptions,
-                        (innerQueryBuilder: any) => {
-                          innerQueryBuilder.parentQueryBuilder = queryBuilder;
-                          innerQueryBuilder.where(
-                            sql.query`(${sql.fragment`${tableAlias}.${sql.identifier(
-                              primaryAttribute[0].name,
-                            )} = ${sql.fragment`${foreignTableAlis}.${sql.identifier(
-                              sourceTableId,
-                            )}`}`}) and (
-                              ${sql.fragment`${foreignTableAlis}.${sql.identifier(
-                              sourceTableType,
-                            )} = ${sql.value(modelName)}`})`,
-                          );
-                          if (!isForeignKeyUnique) {
-                            innerQueryBuilder.beforeLock('orderBy', () => {
-                              // append order by primary key to the list of orders
-                              if (!innerQueryBuilder.isOrderUnique(false)) {
-                                innerQueryBuilder.data.cursorPrefix = ['primary_key_asc'];
-                                if (foreignTable.primaryKeyConstraint) {
-                                  const fPrimaryKeys =
-                                    foreignTable.primaryKeyConstraint.keyAttributes;
-                                  fPrimaryKeys.forEach((key) => {
-                                    innerQueryBuilder.orderBy(
-                                      sql.fragment`${innerQueryBuilder.getTableAlias()}.
-                                  ${sql.identifier(key.name)}`,
-                                      true,
-                                    );
-                                  });
-                                }
-                              }
-                              innerQueryBuilder.setOrderIsUnique();
-                            });
-                          }
-                        },
-                      );
-                      return sql.fragment`(${query})`;
-                    }, getSafeAliasFromAlias(parsedResolveInfoFragment.alias));
-                  },
-                };
-              });
-              return {
-                description: `Backward relation of \`${foreignTableType.name}\`.`,
-                // type: new GraphQLNonNull(RightTableType),
-                // This maybe should be nullable? because polymorphic foreign key
-                // is not constraint
-                type: isForeignKeyUnique
-                  ? foreignTableType
-                  : isConnection
-                    ? new GraphQLNonNull(foreignTableConnectionType)
-                    : new GraphQLList(new GraphQLNonNull(foreignTableType)),
-                args: {},
-                resolve: (data: any, _args: any, _context: any, resolveInfo: any) => {
-                  const safeAlias = getSafeAliasFromResolveInfo(resolveInfo);
-                  const record = data[safeAlias];
-                  // const liveRecord = resolveInfo.rootValue && resolveInfo.rootValue.liveRecord;
-                  // if (record && liveRecord) {
-                  //   liveRecord('pg', table, record.__identifiers);
-                  // }
-                  return record;
-                },
-              };
-            },
+            fieldFunction,
             {
               isPgFieldConnection: isConnection,
               isPgFieldSimpleCollection: !isConnection,

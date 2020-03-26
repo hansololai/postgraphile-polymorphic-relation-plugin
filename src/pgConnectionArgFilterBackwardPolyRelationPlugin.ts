@@ -3,6 +3,7 @@ import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from
 import { GraphQLObjectType } from 'graphql';
 import { QueryBuilder, PgClass, PgAttribute } from 'graphile-build-pg';
 import { ForwardPolyRelationSpecType } from './pgConnectionArgFilterForwardPolyRelationPlugin';
+import { validatePrerequisit, getPrimaryKey, polyForeignKeyUnique } from './utils';
 export interface BackwardPolyRelationSpecType {
   table: PgClass;
   foreignTable: PgClass;
@@ -130,7 +131,6 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
       connectionFilterResolve,
       connectionFilterTypesByTypeName,
       connectionFilterType,
-      mapFieldToPgTable,
       pgPolymorphicClassAndTargetModels = [],
     } = build as GraphileBuild;
     const {
@@ -139,12 +139,8 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
     } = context;
 
     if (!isPgConnectionFilter || table.kind !== 'class') return fields;
-    if (!mapFieldToPgTable) {
-      throw new Error(
-        'mapFieldToPgTable is not defined in build, \
-        you might missed plugin to run before this plugin',
-      );
-    }
+
+    validatePrerequisit(build as GraphileBuild);
 
     let newFields = fields;
     connectionFilterTypesByTypeName[Self.name] = Self;
@@ -163,36 +159,18 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
           const foreignTable = introspectionResultsByKind.classById[currentPoly.from];
           if (!foreignTable) {
             return memo;
-            // throw new Error(
-            //   `Could not find the foreign table (polymorphicName: ${currentPoly.name})`,
-            // );
           }
           if (omit(foreignTable, 'read')) {
             return memo;
           }
-          const primaryConstraint = introspectionResultsByKind.constraint.find(attr =>
-            attr.classId === table.id && attr.type === 'p',
-          );
-          if (!primaryConstraint) {
+
+          const primaryKey = getPrimaryKey(table);
+          if (!primaryKey) {
             return memo;
           }
-          const sourceTableId = `${currentPoly.name}_id`;
-          const sourceTableType = `${currentPoly.name}_type`;
-          const isForeignKeyUnique = introspectionResultsByKind.constraint.find((c) => {
-            // Only if the xxx_type, xxx_id are unique constraint
-            // It must be an unique constraint
-            if (
-              c.classId !== foreignTable.id ||
-              c.keyAttributeNums.length !== 2 ||
-              c.type !== 'u' ||
-              !c.keyAttributes.find(a => a.name === sourceTableId) ||
-              !c.keyAttributes.find(a => a.name === sourceTableType)
-            ) {
-              return false;
-            }
-            // the two attributes must be xx_type, xx_id
-            return true;
-          });
+          const isForeignKeyUnique = polyForeignKeyUnique(
+            build as GraphileBuild, foreignTable, currentPoly);
+
           const fieldName = inflection.backwardRelationByPolymorphic(
             foreignTable,
             currentPoly,
@@ -203,7 +181,7 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
             table,
             fieldName,
             foreignTable,
-            tablePrimaryKey: primaryConstraint.keyAttributes[0],
+            tablePrimaryKey: primaryKey,
             isOneToMany: !isForeignKeyUnique,
             constraint: currentPoly,
           });
