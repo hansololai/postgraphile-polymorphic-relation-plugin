@@ -4,7 +4,7 @@ import {
 } from './postgraphile_types';
 import { addField, ResolveFieldFunc } from './pgConnectionArgFilterBackwardPolyRelationPlugin';
 import { PgClass, PgAttribute } from 'graphile-build-pg';
-import { getPrimaryKey } from './utils';
+import { getPrimaryKey, validatePrerequisit } from './utils';
 
 export interface ForwardPolyRelationSpecType {
   table: PgClass;
@@ -19,20 +19,12 @@ function notNull<T>(v: T | null): v is T {
   return false;
 }
 export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
-  // builder.hook('inflection', (inflection) => ({
-  //   ...inflection,
-  //   filterForwardRelationExistsFieldName(relationFieldName) {
-  //     return `${relationFieldName}Exists`;
-  //   },
-  // }));
-
   builder.hook('GraphQLInputObjectType:fields', (fields, build, context) => {
     const {
       describePgEntity,
       newWithHooks,
       inflection,
       pgSql: sql,
-      pgIntrospectionResultsByKind: introspectionResultsByKind,
       pgIntrospectionResultsByKind: { classById },
       connectionFilterResolve,
       connectionFilterTypesByTypeName,
@@ -47,12 +39,8 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
     let newFields = fields;
 
     if (!isPgConnectionFilter || table.kind !== 'class') return fields;
-    if (!mapFieldToPgTable) {
-      throw new Error(
-        'mapFieldToPgTable is not defined in build, \
-        you might missed plugin to run before this plugin',
-      );
-    }
+    validatePrerequisit(build as GraphileBuild);
+
     // A function convert the modelName to table.id
     const reFormatPolymorphicConstraint = (cur: PgPolymorphicConstraint) => {
       const newTo = cur.to
