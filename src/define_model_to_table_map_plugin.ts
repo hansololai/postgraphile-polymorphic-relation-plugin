@@ -5,8 +5,8 @@ export const addModelTableMappingPlugin = (builder: SchemaBuilder, options: Opti
   const { pgSchemas = [] } = options as any;
   builder.hook('build', (build) => {
     const {
+      inflection,
       pgIntrospectionResultsByKind: { procedure, class: pgClasses },
-      inflection: { upperCamelCase, singularize, camelCase },
     } = build as GraphileBuild;
 
     const fieldToDBMap: FieldToDBMap = pgClasses.reduce((acc: FieldToDBMap, cur) => {
@@ -25,21 +25,19 @@ export const addModelTableMappingPlugin = (builder: SchemaBuilder, options: Opti
         .filter(p => p.name.startsWith(`${cur.name}_`))
         .reduce((a: AttributesMap, c) => {
           // Should probably use inflection
-          const k = singularize(camelCase(c.name.replace(`${cur.name}_`, '')));
-          a[k] = c;
-          return a;
+          const name = inflection.computedColumn(c.name.substr(cur.name.length + 1), c, cur);
+          return { ...a, [name]: c };
         }, {});
       // The Model Name points to this pg object
-      const curTable: FieldToDBMap[string] = {
-        name: cur.name,
-        id: cur.id,
-        attributesMap: cur.attributes.reduce((allAtt: AttributesMap, curA) => {
-          allAtt[singularize(camelCase(curA.name))] = curA;
-          return allAtt;
-        }, procedureAttriutesMap),
+      return {
+        ...acc, [inflection.tableType(cur)]: {
+          name: cur.name,
+          id: cur.id,
+          attributesMap: cur.attributes.reduce((allAtt: AttributesMap, curA) => {
+            return { ...allAtt, [inflection.column(curA)]: curA };
+          }, procedureAttriutesMap),
+        },
       };
-      acc[singularize(upperCamelCase(cur.name))] = curTable;
-      return acc;
     }, {});
     return build.extend(build, { mapFieldToPgTable: fieldToDBMap });
   });
