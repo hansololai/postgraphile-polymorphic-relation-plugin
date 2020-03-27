@@ -1,6 +1,6 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild, PgPolymorphicConstraints, PgPolymorphicConstraint } from './postgraphile_types';
-import { canonical } from './utils';
+import { GraphileBuild } from './postgraphile_types';
+import { isPolymorphicColumn, columnToPolyConstraint } from './utils';
 
 /**
  * @description This plugin add an array named 'pgPolymorphicClassAndTargetModels' in build,
@@ -19,56 +19,19 @@ export const definePolymorphicCustom = (builder: SchemaBuilder, options: Options
 
   builder.hook('build', (build) => {
     const {
-      pgIntrospectionResultsByKind: { class: pgClasses, attributeByClassIdAndNum },
-      pgPolymorphicClassAndTargetModels = [],
+      pgIntrospectionResultsByKind: { attribute },
     } = build as GraphileBuild;
 
     const { pgSchemas = [] } = options as any;
-    const pgPolymorphicClassAndTargetModelsCustome: PgPolymorphicConstraints = pgClasses
-      // get all the class that are table, view, materialized view
-      .filter(c => pgSchemas.includes(c.namespaceName) && ['r', 'v', 'm'].includes(c.classKind))
-      .reduce((acc: PgPolymorphicConstraints, curClass) => {
-        const curClassAttributes: { [x: string]: any } = attributeByClassIdAndNum[curClass.id];
-        // We do it in two steps, first find all xxx_type
-        const allCurrentClassAttributes = Object.values(curClassAttributes);
-        const typeAttributes = allCurrentClassAttributes.filter((attribute) => {
-          // Must be a xxx_type attribute, and also tags need to have "isPolymorphic"
-          return attribute.name.endsWith('_type') && !!attribute.tags.isPolymorphic;
-        });
-        const polyConstraintsOfClass = typeAttributes.map((attribute) => {
-          const {
-            name,
-            tags: { polymorphicTo = [], isPolymorphic },
-          } = attribute;
-          let targetTables: string[] = [];
-          if (!Array.isArray(polymorphicTo)) {
-            targetTables = [canonical(polymorphicTo)];
-          } else {
-            targetTables = polymorphicTo.map(t => canonical(t));
-          }
-          targetTables = Array.from(new Set<string>(targetTables));
-          const polymorphicKey = name.substring(0, name.length - 5);
-          const newPolyConstraint: PgPolymorphicConstraint = {
-            name: polymorphicKey,
-            from: curClass.id,
-            to: targetTables,
-          };
-          if (typeof isPolymorphic === 'string') {
-            // There is a backward association name for this
-            newPolyConstraint.backwardAssociationName = isPolymorphic;
-          }
-          return newPolyConstraint;
-        });
-
-        return [...acc, ...polyConstraintsOfClass];
-      }, []);
-
-    const pgPolymorphicClassAndTargetModelsCombined = [
-      ...pgPolymorphicClassAndTargetModels, ...pgPolymorphicClassAndTargetModelsCustome,
-    ];
+    const pgPolymorphicClassAndTargetModels = attribute
+      .filter((a) => {
+        // the column must from a table of the same scheme
+        return pgSchemas.includes(a.class.namespaceName)
+          && isPolymorphicColumn(a);
+      }).map(columnToPolyConstraint);
 
     return build.extend(build, {
-      pgPolymorphicClassAndTargetModels: pgPolymorphicClassAndTargetModelsCombined,
+      pgPolymorphicClassAndTargetModels,
     });
   });
 };
