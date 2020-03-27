@@ -171,11 +171,10 @@ export const generateFieldWithHookFunc = (
     };
   };
 };
+
 export const getPrimaryKeys = (
   table: PgClass) => {
-  const foreignPrimaryConstraint = table.constraints.find(
-    attr => attr.type === 'p',
-  );
+  const foreignPrimaryConstraint = table.primaryKeyConstraint;
   if (!foreignPrimaryConstraint) return [];
   return foreignPrimaryConstraint.keyAttributes;
 };
