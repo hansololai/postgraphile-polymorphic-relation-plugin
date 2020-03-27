@@ -27,6 +27,34 @@ export const getSourceColumns = (c: PgPolymorphicConstraint) => {
     sourceTableType: `${name}_type`,
   };
 };
+export const isPolymorphicColumn = (attr: PgAttribute) => {
+  return ['r', 'v', 'm'].includes(attr.class.classKind)
+    && attr.name.endsWith('_type') && !!attr.tags.isPolymorphic;
+};
+export const columnToPolyConstraint = (attr: PgAttribute) => {
+  const {
+    name,
+    tags: { polymorphicTo = [], isPolymorphic },
+  } = attr;
+  let targetTables: string[] = [];
+  if (typeof polymorphicTo === 'string') {
+    targetTables = [canonical(polymorphicTo)];
+  } else if (Array.isArray(polymorphicTo)) {
+    targetTables = polymorphicTo.map(canonical);
+  }
+  targetTables = Array.from(new Set<string>(targetTables));
+  const polymorphicKey = name.substring(0, name.length - 5);
+  const newPolyConstraint: PgPolymorphicConstraint = {
+    name: polymorphicKey,
+    from: attr.classId,
+    to: targetTables,
+  };
+  if (typeof isPolymorphic === 'string') {
+    // There is a backward association name for this
+    newPolyConstraint.backwardAssociationName = isPolymorphic;
+  }
+  return newPolyConstraint;
+};
 
 export const generateFieldWithHookFunc = (
   build: GraphileBuild,
