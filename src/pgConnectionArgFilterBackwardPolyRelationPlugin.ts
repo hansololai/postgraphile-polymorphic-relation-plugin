@@ -144,7 +144,6 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
     let newFields = fields;
     connectionFilterTypesByTypeName[Self.name] = Self;
 
-
     const backwardRelationSpecs = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
       .filter(con => con.to.find(c => c.pgClass.id === table.id))
       // .filter((con) => con.type === 'f')
