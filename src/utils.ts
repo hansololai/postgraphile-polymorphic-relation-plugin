@@ -1,6 +1,7 @@
 import { GraphileBuild, PgPolymorphicConstraint } from './postgraphile_types';
 import { QueryBuilder, PgClass, PgAttribute } from 'graphile-build-pg';
 import { IGraphQLToolsResolveInfo } from 'graphql-tools';
+import { Build } from 'postgraphile';
 
 export function canonical(str: string): string {
   const m = str.match(/\w+$/);
@@ -206,7 +207,7 @@ export const polyForeignKeyUnique = (
 };
 
 export const polymorphicCondition = (
-  build: GraphileBuild,
+  build: Build,
   c: PgPolymorphicConstraint,
   polyQueryBuilder: QueryBuilder,
   targetQueryBuilder: QueryBuilder,
@@ -225,4 +226,28 @@ export const polymorphicCondition = (
     ${sql.fragment`${polyTableAlias}.${sql.identifier(
     sourceTableType,
   )} = ${sql.value(targetModelName)}`})`;
+};
+
+export const ensureBuilderUniqueOrder = (
+  build: Build,
+  innerBuilder: QueryBuilder, table: PgClass) => {
+  innerBuilder.beforeLock('orderBy', () => {
+    // append order by primary key to the list of orders
+    const { pgSql: sql } = build;
+    if (!innerBuilder.isOrderUnique(false)) {
+      (innerBuilder as any).data.cursorPrefix = ['primary_key_asc'];
+      if (table.primaryKeyConstraint) {
+        const fPrimaryKeys =
+          table.primaryKeyConstraint.keyAttributes;
+        fPrimaryKeys.forEach((key) => {
+          innerBuilder.orderBy(
+            sql.fragment`${innerBuilder.getTableAlias()}.
+          ${sql.identifier(key.name)}`,
+            true,
+          );
+        });
+      }
+    }
+    innerBuilder.setOrderIsUnique();
+  });
 };

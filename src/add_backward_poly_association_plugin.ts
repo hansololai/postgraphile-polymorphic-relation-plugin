@@ -4,7 +4,7 @@ import {
 } from './postgraphile_types';
 import {
   validatePrerequisit, polyForeignKeyUnique, generateFieldWithHookFunc,
-  polymorphicCondition, getPrimaryKey,
+  polymorphicCondition, getPrimaryKey, ensureBuilderUniqueOrder,
 } from './utils';
 
 export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
@@ -14,7 +14,6 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
   builder.hook('GraphQLObjectType:fields', (fields, build, context) => {
     const {
       extend,
-      pgSql: sql,
       inflection,
       pgOmit: omit,
       pgPolymorphicClassAndTargetModels,
@@ -60,24 +59,7 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
             innerBuilder.where(polymorphicCondition(build as GraphileBuild,
               currentPoly, innerBuilder, qBuilder, modelName, tablePKey));
             if (!isForeignKeyUnique) {
-              innerBuilder.beforeLock('orderBy', () => {
-                // append order by primary key to the list of orders
-                if (!innerBuilder.isOrderUnique(false)) {
-                  (innerBuilder as any).data.cursorPrefix = ['primary_key_asc'];
-                  if (foreignTable.primaryKeyConstraint) {
-                    const fPrimaryKeys =
-                      foreignTable.primaryKeyConstraint.keyAttributes;
-                    fPrimaryKeys.forEach((key) => {
-                      innerBuilder.orderBy(
-                        sql.fragment`${innerBuilder.getTableAlias()}.
-                      ${sql.identifier(key.name)}`,
-                        true,
-                      );
-                    });
-                  }
-                }
-                innerBuilder.setOrderIsUnique();
-              });
+              ensureBuilderUniqueOrder(build, innerBuilder, foreignTable);
             }
           },
           isForeignKeyUnique,
