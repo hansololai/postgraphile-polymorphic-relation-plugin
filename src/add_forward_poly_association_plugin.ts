@@ -1,7 +1,9 @@
 import { SchemaBuilder, Options } from 'postgraphile';
 import { PgClass } from 'graphile-build-pg';
 import { GraphileBuild, PgPolymorphicConstraints } from './postgraphile_types';
-import { validatePrerequisit, generateFieldWithHookFunc, polymorphicCondition, getPrimaryKey } from './utils';
+import {
+  validatePrerequisit, generateFieldWithHookFunc, polymorphicCondition,
+} from './utils';
 
 export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
   builder.hook('inflection', inflection => ({
@@ -13,9 +15,7 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
   builder.hook('GraphQLObjectType:fields', (fields, build, context) => {
     const {
       extend,
-      pgIntrospectionResultsByKind: { classById },
       inflection,
-      mapFieldToPgTable,
       pgPolymorphicClassAndTargetModels,
     } = build as GraphileBuild;
     const {
@@ -29,17 +29,14 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
 
     const forwardPolyRelationSpec = (
       <PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-      .filter(con => con.from === table.id)
+      .filter(con => con.from.id === table.id)
       .reduce((memo, currentPoly) => {
         const { name } = currentPoly;
-        const fieldsPerPolymorphicConstraint = currentPoly.to.reduce((acc, mName) => {
-          const pgTableSimple = mapFieldToPgTable[mName];
-
-          if (!pgTableSimple) return acc;
-          const foreignTable = classById[pgTableSimple.id];
+        const fieldsPerPolymorphicConstraint = currentPoly.to.reduce((acc, polyC) => {
+          const { pgClass: foreignTable,
+            name: mName,
+            pKey: foreignPrimaryKey } = polyC;
           const fieldName = `${inflection.forwardRelationByPolymorphic(foreignTable, name)}`;
-          const foreignPrimaryKey = getPrimaryKey(foreignTable);
-          if (!foreignPrimaryKey) return acc;
           const fieldFunction = generateFieldWithHookFunc(
             build as GraphileBuild,
             foreignTable,

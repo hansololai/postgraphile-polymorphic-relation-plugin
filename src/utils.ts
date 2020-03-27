@@ -7,6 +7,9 @@ export function canonical(str: string): string {
   return (m && m[0]) || str;
 }
 
+function notNull<T>(obj: T | null): obj is T {
+  return !!obj;
+}
 export const validatePrerequisit = (
   build: GraphileBuild,
 ) => {
@@ -31,11 +34,14 @@ export const isPolymorphicColumn = (attr: PgAttribute) => {
   return ['r', 'v', 'm'].includes(attr.class.classKind)
     && attr.name.endsWith('_type') && !!attr.tags.isPolymorphic;
 };
-export const columnToPolyConstraint = (attr: PgAttribute) => {
+export const columnToPolyConstraint = (build: GraphileBuild, attr: PgAttribute) => {
   const {
     name,
     tags: { polymorphicTo = [], isPolymorphic },
   } = attr;
+  const { mapFieldToPgTable,
+    pgIntrospectionResultsByKind: { classById },
+  } = build;
   let targetTables: string[] = [];
   if (typeof polymorphicTo === 'string') {
     targetTables = [canonical(polymorphicTo)];
@@ -46,8 +52,22 @@ export const columnToPolyConstraint = (attr: PgAttribute) => {
   const polymorphicKey = name.substring(0, name.length - 5);
   const newPolyConstraint: PgPolymorphicConstraint = {
     name: polymorphicKey,
-    from: attr.classId,
-    to: targetTables,
+    from: attr.class,
+    to: targetTables.map((mName) => {
+      const pgTableSimple = mapFieldToPgTable[mName];
+      if (!pgTableSimple) return null;
+      const c = classById[pgTableSimple.id];
+      // Also this class need to have a single column primary key
+      const keys = getPrimaryKeys(c);
+      if (keys.length !== 1) {
+        return null;
+      }
+      return {
+        pgClass: c,
+        pKey: keys[0],
+        name: mName,
+      };
+    }).filter(notNull),
   };
   if (typeof isPolymorphic === 'string') {
     // There is a backward association name for this
@@ -151,13 +171,17 @@ export const generateFieldWithHookFunc = (
     };
   };
 };
-export const getPrimaryKey = (
+export const getPrimaryKeys = (
   table: PgClass) => {
   const foreignPrimaryConstraint = table.constraints.find(
     attr => attr.type === 'p',
   );
-  if (!foreignPrimaryConstraint) return null;
-  return foreignPrimaryConstraint.keyAttributes[0];
+  if (!foreignPrimaryConstraint) return [];
+  return foreignPrimaryConstraint.keyAttributes;
+};
+export const getPrimaryKey = (table: PgClass) => {
+  const keys = getPrimaryKeys(table);
+  return keys[0];
 };
 export const polyForeignKeyUnique = (
   build: GraphileBuild,

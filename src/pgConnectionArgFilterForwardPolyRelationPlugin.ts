@@ -4,7 +4,7 @@ import {
 } from './postgraphile_types';
 import { addField, ResolveFieldFunc } from './pgConnectionArgFilterBackwardPolyRelationPlugin';
 import { PgClass, PgAttribute } from 'graphile-build-pg';
-import { getPrimaryKey, validatePrerequisit } from './utils';
+import { validatePrerequisit } from './utils';
 
 export interface ForwardPolyRelationSpecType {
   table: PgClass;
@@ -14,10 +14,6 @@ export interface ForwardPolyRelationSpecType {
   constraint: PgPolymorphicConstraint;
 }
 
-function notNull<T>(v: T | null): v is T {
-  if (!!v) return true;
-  return false;
-}
 export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
   builder.hook('GraphQLInputObjectType:fields', (fields, build, context) => {
     const {
@@ -25,11 +21,9 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
       newWithHooks,
       inflection,
       pgSql: sql,
-      pgIntrospectionResultsByKind: { classById },
       connectionFilterResolve,
       connectionFilterTypesByTypeName,
       connectionFilterType,
-      mapFieldToPgTable,
       pgPolymorphicClassAndTargetModels = [],
     } = build as GraphileBuild;
     const {
@@ -41,34 +35,14 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
     if (!isPgConnectionFilter || table.kind !== 'class') return fields;
     validatePrerequisit(build as GraphileBuild);
 
-    // A function convert the modelName to table.id
-    const reFormatPolymorphicConstraint = (cur: PgPolymorphicConstraint) => {
-      const newTo = cur.to
-        .map((targetModelName) => {
-          const t = mapFieldToPgTable[targetModelName];
-          if (!t) {
-            return null;
-          }
-          const c = classById[t.id];
-          if (c.classKind !== 'r') {
-            return null;
-          }
-          return c;
-        }).filter(notNull)
-        .map((r) => {
-          return r.id;
-        });
-      return { ...cur, to: newTo };
-    };
-
     connectionFilterTypesByTypeName[Self.name] = Self;
 
     // Iterate the pgPolymorphic constraints and find the ones that are relavent to this table
     const forwardPolyRelationSpecs: ForwardPolyRelationSpecType[]
       = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-        .filter(con => con.from === table.id)
+        .filter(con => con.from.id === table.id)
         .reduce((acc: ForwardPolyRelationSpecType[], currentPoly) => {
-          const cur = reFormatPolymorphicConstraint(currentPoly);
+          const cur = currentPoly;
           // For each polymorphic, we collect the following, using Tag as example
           // Suppose Tag can be tagged on User, Post via taggable_id and taggable_type
           // 1. target table objects. e.g. User, Post
@@ -77,21 +51,15 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
           // 4. foreignTableAttribute e.g. 'id'
           const toReturn: ForwardPolyRelationSpecType[] = cur.to.reduce(
             (memo: ForwardPolyRelationSpecType[], curForeignTable) => {
-              const foreignTable = classById[curForeignTable];
-              if (!foreignTable) return memo;
+              const { pgClass: foreignTable, pKey } = curForeignTable;
               const fieldName = inflection.forwardRelationByPolymorphic(foreignTable, cur.name);
-              const pKey = getPrimaryKey(foreignTable);
-              if (pKey) {
-                memo.push({
-                  table,
-                  foreignTable,
-                  fieldName,
-                  foreignPrimaryKey: pKey,
-                  constraint: currentPoly,
-                });
-              }
-
-              return memo;
+              return [...memo, {
+                table,
+                foreignTable,
+                fieldName,
+                foreignPrimaryKey: pKey,
+                constraint: currentPoly,
+              }];
             },
             [],
           );

@@ -42,8 +42,12 @@ export type FieldToDBMap = {
 };
 export interface PgPolymorphicConstraint {
   name: string;
-  from: string; // classId
+  from: PgClass; // classId
   backwardAssociationName?: string; // field name for backward association. (default table name)
-  to: string[]; // due to limitation at the time, it is the ModelName array.
+  to: {
+    pgClass: PgClass,
+    pKey: PgAttribute,
+    name: string,
+  }[]; // due to limitation at the time, it is the ModelName array.
 }
 export type PgPolymorphicConstraints = PgPolymorphicConstraint[];

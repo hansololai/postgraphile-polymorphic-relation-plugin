@@ -28,7 +28,7 @@ export const definePolymorphicCustom = (builder: SchemaBuilder, options: Options
         // the column must from a table of the same scheme
         return pgSchemas.includes(a.class.namespaceName)
           && isPolymorphicColumn(a);
-      }).map(columnToPolyConstraint);
+      }).map(a => columnToPolyConstraint(build as GraphileBuild, a));
 
     return build.extend(build, {
       pgPolymorphicClassAndTargetModels,

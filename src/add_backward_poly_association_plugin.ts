@@ -27,7 +27,6 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
   builder.hook('GraphQLObjectType:fields', (fields, build, context) => {
     const {
       extend,
-      pgIntrospectionResultsByKind: introspectionResultsByKind,
       pgSql: sql,
       inflection,
       pgOmit: omit,
@@ -41,22 +40,24 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
     if (!isPgRowType || !table || table.kind !== 'class') {
       return fields;
     }
+    const tablePKey = getPrimaryKey(table);
+    if (!tablePKey) {
+      return fields;
+    }
     validatePrerequisit(build as GraphileBuild);
 
     const modelName = inflection.tableType(table);
     // Find  all the forward relations with polymorphic
     const isConnection = true;
+
     const backwardPolyAssociation = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-      .filter((con) => {
-        return con.to.includes(modelName);
-      })
+      .filter(con => con.to.find(c => c.pgClass.id === table.id))
       .reduce((memo, currentPoly) => {
         // const { name } = currentPoly;
-        const foreignTable = introspectionResultsByKind.classById[currentPoly.from];
+        const foreignTable = currentPoly.from;
         if (omit(foreignTable, 'read')) {
           return memo;
         }
-        const tablePKey = getPrimaryKey(table);
         const isForeignKeyUnique = polyForeignKeyUnique(build as GraphileBuild,
           foreignTable, currentPoly);
         const fieldName = inflection.backwardRelationByPolymorphic(
@@ -64,9 +65,7 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
           currentPoly,
           isForeignKeyUnique,
         );
-        if (!tablePKey) {
-          return memo;
-        }
+
         const fieldFunction = generateFieldWithHookFunc(
           build as GraphileBuild,
           foreignTable,

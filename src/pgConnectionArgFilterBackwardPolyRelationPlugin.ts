@@ -126,7 +126,6 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
       inflection,
       pgOmit: omit,
       pgSql: sql,
-      pgIntrospectionResultsByKind: introspectionResultsByKind,
       graphql: { GraphQLInputObjectType },
       connectionFilterResolve,
       connectionFilterTypesByTypeName,
@@ -145,10 +144,9 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
     let newFields = fields;
     connectionFilterTypesByTypeName[Self.name] = Self;
 
-    const modelName = inflection.tableType(table);
 
     const backwardRelationSpecs = (<PgPolymorphicConstraints>pgPolymorphicClassAndTargetModels)
-      .filter(con => con.to.includes(modelName))
+      .filter(con => con.to.find(c => c.pgClass.id === table.id))
       // .filter((con) => con.type === 'f')
       // .filter((con) => con.foreignClassId === table.id)
       .reduce(
@@ -156,7 +154,7 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
           // if (omit(foreignConstraint, 'read')) {
           //   return memo;
           // }
-          const foreignTable = introspectionResultsByKind.classById[currentPoly.from];
+          const foreignTable = currentPoly.from;
           if (!foreignTable) {
             return memo;
           }
