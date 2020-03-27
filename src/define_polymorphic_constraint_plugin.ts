@@ -1,6 +1,7 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild } from './postgraphile_types';
+import { GraphileBuild, PgPolymorphicConstraint } from './postgraphile_types';
 import { isPolymorphicColumn, columnToPolyConstraint } from './utils';
+import { PgClass } from 'graphile-build-pg';
 
 /**
  * @description This plugin add an array named 'pgPolymorphicClassAndTargetModels' in build,
@@ -16,7 +17,24 @@ import { isPolymorphicColumn, columnToPolyConstraint } from './utils';
  * @author Han Lai
  */
 export const definePolymorphicCustom = (builder: SchemaBuilder, options: Options) => {
-
+  // First add an inflector for polymorphic backrelation type name
+  builder.hook('inflection', inflection => ({
+    ...inflection,
+    filterManyPolyType(table: PgClass, foreignTable: PgClass) {
+      return `${this.filterManyType(table, foreignTable)}Poly`;
+    },
+    backwardRelationByPolymorphic(
+      table: PgClass,
+      polyConstraint: PgPolymorphicConstraint,
+      isUnique: boolean,
+    ) {
+      const { backwardAssociationName } = polyConstraint;
+      const name = backwardAssociationName || table.name;
+      const fieldName = isUnique ? this.singularize(name) : this.pluralize(name);
+      // return this.camelCase(`${fieldName}-as-${polymorphicName}`);
+      return this.camelCase(fieldName);
+    },
+  }));
   builder.hook('build', (build) => {
     const {
       pgIntrospectionResultsByKind: { attribute },

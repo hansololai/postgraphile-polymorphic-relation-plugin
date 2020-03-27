@@ -99,24 +99,6 @@ export const addField = (
   return toReturn;
 };
 export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Options) => {
-  // First add an inflector for polymorphic backrelation type name
-  builder.hook('inflection', inflection => ({
-    ...inflection,
-    filterManyPolyType(table: PgClass, foreignTable: PgClass) {
-      return `${this.filterManyType(table, foreignTable)}Poly`;
-    },
-    backwardRelationByPolymorphic(
-      table: PgClass,
-      polyConstraint: PgPolymorphicConstraint,
-      isUnique: boolean,
-    ) {
-      const { backwardAssociationName } = polyConstraint;
-      const name = backwardAssociationName || table.name;
-      const fieldName = isUnique ? this.singularize(name) : this.pluralize(name);
-      // return this.camelCase(`${fieldName}-as-${polymorphicName}`);
-      return this.camelCase(fieldName);
-    },
-  }));
   // const { pgSimpleCollections } = option;
   // const hasConnections = pgSimpleCollections !== 'only';
   builder.hook('GraphQLInputObjectType:fields', (fields, build, context) => {
