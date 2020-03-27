@@ -1,27 +1,14 @@
 import { SchemaBuilder, Options } from 'postgraphile';
-import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
-import { PgClass } from 'graphile-build-pg';
+import {
+  GraphileBuild, PgPolymorphicConstraints,
+} from './postgraphile_types';
 import {
   validatePrerequisit, polyForeignKeyUnique, generateFieldWithHookFunc,
   polymorphicCondition, getPrimaryKey,
 } from './utils';
 
 export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Options) => {
-  // First add an inflector for polymorphic backrelation type name
-  builder.hook('inflection', inflection => ({
-    ...inflection,
-    backwardRelationByPolymorphic(
-      table: PgClass,
-      polyConstraint: PgPolymorphicConstraint,
-      isUnique: boolean,
-    ) {
-      const { backwardAssociationName } = polyConstraint;
-      const name = backwardAssociationName || table.name;
-      const fieldName = isUnique ? this.singularize(name) : this.pluralize(name);
-      // return this.camelCase(`${fieldName}-as-${polymorphicName}`);
-      return this.camelCase(fieldName);
-    },
-  }));
+
   // const { pgSimpleCollections } = option;
   // const hasConnections = pgSimpleCollections !== 'only';
   builder.hook('GraphQLObjectType:fields', (fields, build, context) => {
