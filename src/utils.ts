@@ -1,5 +1,5 @@
 import { GraphileBuild, PgPolymorphicConstraint } from './postgraphile_types';
-import { QueryBuilder, PgClass, PgAttribute } from 'graphile-build-pg';
+import { QueryBuilder, PgClass, PgAttribute, SQL } from 'graphile-build-pg';
 import { IGraphQLToolsResolveInfo } from 'graphql-tools';
 import { Build } from 'postgraphile';
 
@@ -213,19 +213,23 @@ export const polymorphicCondition = (
   targetQueryBuilder: QueryBuilder,
   targetModelName: string,
   pKey: PgAttribute) => {
-  const { pgSql: sql } = build;
-  const sourceTableId = `${c.name}_id`;
-  const sourceTableType = `${c.name}_type`;
   const targetTableAlias = targetQueryBuilder.getTableAlias();
   const polyTableAlias = polyQueryBuilder.getTableAlias();
-  return sql.query`(${sql.fragment`${targetTableAlias}.${sql.identifier(
-    pKey.name,
-  )} = ${sql.fragment`${polyTableAlias}.${sql.identifier(
+  return polySqlKeyMatch(build, polyTableAlias, targetTableAlias, pKey, targetModelName, c);
+};
+export const polySqlKeyMatch = (
+  build: Build,
+  polyAlias: SQL,
+  foreignAlias: SQL,
+  fPKey: PgAttribute,
+  modelName: string, polyConstraint: PgPolymorphicConstraint) => {
+  const { pgSql: sql } = build;
+  const { sourceTableId, sourceTableType } = getSourceColumns(polyConstraint);
+  return sql.query`(${sql.fragment`${polyAlias}.${sql.identifier(
     sourceTableId,
-  )}`}`}) and (
-    ${sql.fragment`${polyTableAlias}.${sql.identifier(
-    sourceTableType,
-  )} = ${sql.value(targetModelName)}`})`;
+  )} = ${foreignAlias}.${sql.identifier(fPKey.name)}`}) and (
+${sql.fragment`${polyAlias}.${sql.identifier(sourceTableType)} = ${sql.value(
+    modelName)}`})`;
 };
 
 export const ensureBuilderUniqueOrder = (

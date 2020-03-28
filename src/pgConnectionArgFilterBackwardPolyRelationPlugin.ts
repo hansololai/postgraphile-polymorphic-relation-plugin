@@ -1,7 +1,7 @@
 import { SchemaBuilder, Options, Build, Inflection } from 'postgraphile';
 import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
 import { GraphQLObjectType } from 'graphql';
-import { QueryBuilder, PgClass, PgAttribute } from 'graphile-build-pg';
+import { QueryBuilder, PgClass, PgAttribute, SQL } from 'graphile-build-pg';
 import { ForwardPolyRelationSpecType } from './pgConnectionArgFilterForwardPolyRelationPlugin';
 import { validatePrerequisit, getPrimaryKey, polyForeignKeyUnique } from './utils';
 export interface BackwardPolyRelationSpecType {
@@ -16,7 +16,7 @@ export interface BackwardPolyRelationSpecType {
 type SqlFragment = any;
 
 export interface ResolveFieldProps {
-  sourceAlias: string;
+  sourceAlias: SQL;
   fieldName: string;
   fieldValue: any;
   queryBuilder: QueryBuilder;
@@ -24,8 +24,8 @@ export interface ResolveFieldProps {
 export type ResolveFieldFunc = (prop: ResolveFieldProps) => SqlFragment | null;
 
 interface GetSqlSelectWhereKeysMatchProps {
-  sourceAlias: string;
-  foreignTableAlias: string;
+  sourceAlias: SQL;
+  foreignTableAlias: SQL;
   foreignTable: PgClass;
   table: PgClass;
   constraint: PgPolymorphicConstraint;
