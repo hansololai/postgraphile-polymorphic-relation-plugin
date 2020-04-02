@@ -1,7 +1,8 @@
 import {
-  SchemaBuilder, Options,
+  SchemaBuilder,
   // Build,
   Inflection,
+  makePluginByCombiningPlugins,
 } from 'postgraphile';
 import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
 // import { GraphQLObjectType } from 'graphql';
@@ -73,7 +74,118 @@ const getSqlSelectWhereKeysMatch = ({
   return sqlSelectWhereKeysMatch;
 };
 
-export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Options) => {
+const addBackwardPolyManyFilter = (builder: SchemaBuilder) => {
+
+  builder.hook('GraphQLInputObjectType:fields', (fields, build, context) => {
+    const {
+      extend,
+      newWithHooks,
+      inflection,
+      pgSql: sql,
+      connectionFilterResolve,
+      connectionFilterRegisterResolver,
+      connectionFilterTypesByTypeName,
+      connectionFilterType,
+    } = build;
+    const {
+      fieldWithHooks,
+      scope: {
+        pgIntrospection: table,
+        foreignTable, isPgConnectionFilterManyPoly,
+        polyConstraint: constraint },
+      Self,
+    } = context;
+
+    if (!isPgConnectionFilterManyPoly || !foreignTable) return fields;
+
+    connectionFilterTypesByTypeName[Self.name] = Self;
+
+    const foreignTableTypeName = inflection.tableType(foreignTable);
+    const foreignTableFilterTypeName = inflection.filterType(foreignTableTypeName);
+    const FilterType = connectionFilterType(
+      newWithHooks,
+      foreignTableFilterTypeName,
+      foreignTable,
+      foreignTableTypeName,
+    );
+
+    const manyFields = {
+      every: fieldWithHooks(
+        'every',
+        {
+          description: `Every related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘and.’`,
+          type: FilterType,
+        },
+        {
+          isPgConnectionFilterManyField: true,
+        },
+      ),
+      some: fieldWithHooks(
+        'some',
+        {
+          description: `Some related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘any.’`,
+          type: FilterType,
+        },
+        {
+          isPgConnectionFilterManyField: true,
+        },
+      ),
+      none: fieldWithHooks(
+        'none',
+        {
+          description: `No related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘none.’`,
+          type: FilterType,
+        },
+        {
+          isPgConnectionFilterManyField: true,
+        },
+      ),
+    };
+    const resolve: ResolveFieldFunc = ({ sourceAlias, fieldName, fieldValue, queryBuilder }) => {
+      if (fieldValue == null) return null;
+
+      const tablePrimaryKey = getPrimaryKey(table);
+
+      const foreignTableAlias = sql.identifier(Symbol());
+      const sqlSelectWhereKeysMatch = getSqlSelectWhereKeysMatch({
+        sourceAlias,
+        foreignTableAlias,
+        foreignTable,
+        table,
+        constraint,
+        tablePrimaryKey,
+        sql,
+        inflection,
+      });
+      const sqlFragment = connectionFilterResolve(
+        fieldValue,
+        foreignTableAlias,
+        foreignTableFilterTypeName,
+        queryBuilder,
+      );
+      if (sqlFragment == null) {
+        return null;
+      }
+      if (fieldName === 'every') {
+        return sql.query`not exists(${sqlSelectWhereKeysMatch} and not (${sqlFragment}))`;
+      }
+      if (fieldName === 'some') {
+        return sql.query`exists(${sqlSelectWhereKeysMatch} and (${sqlFragment}))`;
+      }
+      if (fieldName === 'none') {
+        return sql.query`not exists(${sqlSelectWhereKeysMatch} and (${sqlFragment}))`;
+      }
+      throw new Error(`Unknown field name: ${fieldName}`);
+    };
+
+    for (const fieldName of Object.keys(manyFields)) {
+      connectionFilterRegisterResolver(Self.name, fieldName, resolve);
+    }
+
+    return extend(fields, manyFields);
+  });
+};
+const addBackwardPolySingleFilter = (builder: SchemaBuilder) => {
   // const { pgSimpleCollections } = option;
   // const hasConnections = pgSimpleCollections !== 'only';
   builder.hook('GraphQLInputObjectType:fields', (fields, build, context) => {
@@ -211,113 +323,9 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
 
     return extend(fields, backwardRelationFields);
   });
-
-  builder.hook('GraphQLInputObjectType:fields', (fields, build, context) => {
-    const {
-      extend,
-      newWithHooks,
-      inflection,
-      pgSql: sql,
-      connectionFilterResolve,
-      connectionFilterRegisterResolver,
-      connectionFilterTypesByTypeName,
-      connectionFilterType,
-    } = build;
-    const {
-      fieldWithHooks,
-      scope: {
-        pgIntrospection: table,
-        foreignTable, isPgConnectionFilterManyPoly,
-        polyConstraint: constraint },
-      Self,
-    } = context;
-
-    if (!isPgConnectionFilterManyPoly || !foreignTable) return fields;
-
-    connectionFilterTypesByTypeName[Self.name] = Self;
-
-    const foreignTableTypeName = inflection.tableType(foreignTable);
-    const foreignTableFilterTypeName = inflection.filterType(foreignTableTypeName);
-    const FilterType = connectionFilterType(
-      newWithHooks,
-      foreignTableFilterTypeName,
-      foreignTable,
-      foreignTableTypeName,
-    );
-
-    const manyFields = {
-      every: fieldWithHooks(
-        'every',
-        {
-          description: `Every related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘and.’`,
-          type: FilterType,
-        },
-        {
-          isPgConnectionFilterManyField: true,
-        },
-      ),
-      some: fieldWithHooks(
-        'some',
-        {
-          description: `Some related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘any.’`,
-          type: FilterType,
-        },
-        {
-          isPgConnectionFilterManyField: true,
-        },
-      ),
-      none: fieldWithHooks(
-        'none',
-        {
-          description: `No related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘none.’`,
-          type: FilterType,
-        },
-        {
-          isPgConnectionFilterManyField: true,
-        },
-      ),
-    };
-    const resolve: ResolveFieldFunc = ({ sourceAlias, fieldName, fieldValue, queryBuilder }) => {
-      if (fieldValue == null) return null;
-
-      const tablePrimaryKey = getPrimaryKey(table);
-
-      const foreignTableAlias = sql.identifier(Symbol());
-      const sqlSelectWhereKeysMatch = getSqlSelectWhereKeysMatch({
-        sourceAlias,
-        foreignTableAlias,
-        foreignTable,
-        table,
-        constraint,
-        tablePrimaryKey,
-        sql,
-        inflection,
-      });
-      const sqlFragment = connectionFilterResolve(
-        fieldValue,
-        foreignTableAlias,
-        foreignTableFilterTypeName,
-        queryBuilder,
-      );
-      if (sqlFragment == null) {
-        return null;
-      }
-      if (fieldName === 'every') {
-        return sql.query`not exists(${sqlSelectWhereKeysMatch} and not (${sqlFragment}))`;
-      }
-      if (fieldName === 'some') {
-        return sql.query`exists(${sqlSelectWhereKeysMatch} and (${sqlFragment}))`;
-      }
-      if (fieldName === 'none') {
-        return sql.query`not exists(${sqlSelectWhereKeysMatch} and (${sqlFragment}))`;
-      }
-      throw new Error(`Unknown field name: ${fieldName}`);
-    };
-
-    for (const fieldName of Object.keys(manyFields)) {
-      connectionFilterRegisterResolver(Self.name, fieldName, resolve);
-    }
-
-    return extend(fields, manyFields);
-  });
 };
+
+export const addBackwardPolyRelationFilter = makePluginByCombiningPlugins(
+  addBackwardPolyManyFilter,
+  addBackwardPolySingleFilter,
+);
