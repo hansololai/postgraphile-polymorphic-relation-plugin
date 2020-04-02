@@ -3,16 +3,16 @@ import {
   PgPolymorphicConstraints, GraphileBuild, PgPolymorphicConstraint,
 } from './postgraphile_types';
 import { ResolveFieldFunc } from './pgConnectionArgFilterBackwardPolyRelationPlugin';
-import { validatePrerequisit, polySqlKeyMatch } from './utils';
+import { validatePrerequisit, polySqlKeyMatch, getPrimaryKey } from './utils';
 import { PgClass } from 'graphile-build-pg';
 
-const generateFilterResolveFunc = (
+export const generateFilterResolveFunc = (
   build: GraphileBuild,
   poly: PgPolymorphicConstraint,
-  to: PgPolymorphicConstraint['to'][number],
+  sourceTable: PgClass,
+  foreignTable: PgClass,
+  foreignIsPoly: boolean,
 ) => {
-
-  const { pKey, pgClass: foreignTable } = to;
 
   const {
     pgSql: sql,
@@ -20,6 +20,7 @@ const generateFilterResolveFunc = (
     connectionFilterResolve,
   } = build;
   const foreignTableTypeName = inflection.tableType(foreignTable);
+  const sourceTableTypeName = inflection.tableType(sourceTable);
   const foreignTableAlias = sql.identifier(Symbol());
   const foreignTableFilterTypeName = inflection.filterType(foreignTableTypeName);
   const sqlIdentifier = sql.identifier(foreignTable.namespace.name, foreignTable.name);
@@ -30,9 +31,18 @@ const generateFilterResolveFunc = (
     queryBuilder,
   }) => {
     if (fieldValue == null) return null;
-
-    const sqlKeysMatch = polySqlKeyMatch(
-      build, sourceAlias, foreignTableAlias, pKey, foreignTableTypeName, poly);
+    let sqlKeysMatch = '';
+    if (foreignIsPoly) {
+      // If foreign table is poly table, then we need to switch the alias
+      const pKey = getPrimaryKey(sourceTable);
+      sqlKeysMatch = polySqlKeyMatch(
+        build, foreignTableAlias, sourceAlias, pKey, sourceTableTypeName, poly);
+    } else {
+      // If foreign table is not poly, means it is a regular table.
+      const pKey = getPrimaryKey(foreignTable);
+      sqlKeysMatch = polySqlKeyMatch(
+        build, sourceAlias, foreignTableAlias, pKey, foreignTableTypeName, poly);
+    }
 
     const sqlFragment = connectionFilterResolve(
       fieldValue,
@@ -52,7 +62,7 @@ const generateFilterResolveFunc = (
   return resolve;
 };
 
-const getTableFilterType = (build: Build, table: PgClass) => {
+export const getTableFilterType = (build: Build, table: PgClass) => {
   const { newWithHooks, inflection, connectionFilterType } = build;
   const foreignTableTypeName = inflection.tableType(table);
   const foreignTableFilterTypeName = inflection.filterType(foreignTableTypeName);
@@ -111,8 +121,9 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
                 },
               ),
             };
-            const resolve = generateFilterResolveFunc(build as GraphileBuild,
-              currentPoly, curForeignTable);
+            const resolve = generateFilterResolveFunc(
+              build as GraphileBuild,
+              currentPoly, table, foreignTable, false);
             connectionFilterRegisterResolver(Self.name, fName, resolve);
             return extend(memo, singleField);
           }, {});
