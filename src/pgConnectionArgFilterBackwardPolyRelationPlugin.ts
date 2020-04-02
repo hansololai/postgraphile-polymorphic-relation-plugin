@@ -2,7 +2,6 @@ import { SchemaBuilder, Options, Build, Inflection } from 'postgraphile';
 import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
 import { GraphQLObjectType } from 'graphql';
 import { QueryBuilder, PgClass, PgAttribute, SQL } from 'graphile-build-pg';
-import { ForwardPolyRelationSpecType } from './pgConnectionArgFilterForwardPolyRelationPlugin';
 import { validatePrerequisit, getPrimaryKey, polyForeignKeyUnique } from './utils';
 export interface BackwardPolyRelationSpecType {
   table: PgClass;
@@ -64,12 +63,12 @@ export const addField = (
   description: string,
   type: GraphQLObjectType,
   resolve: ResolveFieldFunc,
-  spec: BackwardPolyRelationSpecType | ForwardPolyRelationSpecType,
+  spec: BackwardPolyRelationSpecType,
   hint: string,
   build: Build,
   fields: any,
   relationSpecByFieldName: {
-    [x: string]: BackwardPolyRelationSpecType | ForwardPolyRelationSpecType,
+    [x: string]: BackwardPolyRelationSpecType,
   },
   context: any,
 ) => {
