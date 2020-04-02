@@ -3,6 +3,7 @@ import {
   // Build,
   Inflection,
   makePluginByCombiningPlugins,
+  Build,
 } from 'postgraphile';
 import { GraphileBuild, PgPolymorphicConstraint, PgPolymorphicConstraints } from './postgraphile_types';
 // import { GraphQLObjectType } from 'graphql';
@@ -11,7 +12,7 @@ import {
   // camelCase
 } from 'graphile-build-pg';
 import {
-  validatePrerequisit, getPrimaryKey, polyForeignKeyUnique,
+  validatePrerequisit, getPrimaryKey, polyForeignKeyUnique, polySqlKeyMatch,
   // generateFieldWithHookFunc,
 } from './utils';
 import {
@@ -46,6 +47,7 @@ interface GetSqlSelectWhereKeysMatchProps {
   tablePrimaryKey: PgAttribute;
   sql: any;
   inflection: Inflection;
+  build: Build;
 }
 const getSqlSelectWhereKeysMatch = ({
   sourceAlias,
@@ -56,18 +58,13 @@ const getSqlSelectWhereKeysMatch = ({
   tablePrimaryKey,
   sql,
   inflection,
+  build,
 }: GetSqlSelectWhereKeysMatchProps) => {
-  const sourceTableId = `${constraint.name}_id`;
-  const sourceTableType = `${constraint.name}_type`;
   const tableTypeName = inflection.tableType(table);
   const sqlIdentifier = sql.identifier(foreignTable.namespace.name, foreignTable.name);
+  const sqlKeysMatch = polySqlKeyMatch(
+    build, foreignTableAlias, sourceAlias, tablePrimaryKey, tableTypeName, constraint);
 
-  const sqlKeysMatch = sql.query`(${sql.fragment`${foreignTableAlias}.${sql.identifier(
-    sourceTableId,
-  )} = ${sourceAlias}.${sql.identifier(tablePrimaryKey.name)}`}) and (
-  ${sql.fragment`${foreignTableAlias}.${sql.identifier(sourceTableType)} = ${sql.value(
-    tableTypeName,
-  )}`})`;
   const sqlSelectWhereKeysMatch = sql.query`select 1 from ${sqlIdentifier} as
   ${foreignTableAlias} where ${sqlKeysMatch}`;
 
@@ -156,6 +153,7 @@ const addBackwardPolyManyFilter = (builder: SchemaBuilder) => {
         tablePrimaryKey,
         sql,
         inflection,
+        build,
       });
       const sqlFragment = connectionFilterResolve(
         fieldValue,
