@@ -85,6 +85,7 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
       pgPolymorphicClassAndTargetModels = [],
     } = build as GraphileBuild;
     const {
+      fieldWithHooks,
       scope: { pgIntrospection: table, isPgConnectionFilter },
       Self,
     } = context;
@@ -107,9 +108,12 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
             const ForeignTableFilterType = getTableFilterType(build, foreignTable);
             if (!ForeignTableFilterType) return memo;
 
-            const { fieldWithHooks, Self } = context;
             // Field
-            const singleField = {
+            const resolve = generateFilterResolveFunc(
+              build as GraphileBuild,
+              currentPoly, table, foreignTable, false);
+            connectionFilterRegisterResolver(Self.name, fName, resolve);
+            return extend(memo, {
               [fName]: fieldWithHooks(
                 fName,
                 {
@@ -120,12 +124,7 @@ export const addForwardPolyRelationFilter = (builder: SchemaBuilder) => {
                   isPgConnectionFilterField: true,
                 },
               ),
-            };
-            const resolve = generateFilterResolveFunc(
-              build as GraphileBuild,
-              currentPoly, table, foreignTable, false);
-            connectionFilterRegisterResolver(Self.name, fName, resolve);
-            return extend(memo, singleField);
+            });
           }, {});
         return extend(acc, toReturn);
       }, {});
