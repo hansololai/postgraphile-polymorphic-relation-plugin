@@ -1,6 +1,7 @@
 import { GraphileBuild, PgPolymorphicConstraint } from './postgraphile_types';
-import { QueryBuilder, PgClass, PgAttribute } from 'graphile-build-pg';
+import { QueryBuilder, PgClass, PgAttribute, SQL } from 'graphile-build-pg';
 import { IGraphQLToolsResolveInfo } from 'graphql-tools';
+import { Build } from 'postgraphile';
 
 export function canonical(str: string): string {
   const m = str.match(/\w+$/);
@@ -189,8 +190,7 @@ export const polyForeignKeyUnique = (
   const {
     pgIntrospectionResultsByKind: { constraint },
   } = build;
-  const sourceTableId = `${c.name}_id`;
-  const sourceTableType = `${c.name}_type`;
+  const { sourceTableId, sourceTableType } = getSourceColumns(c);
   const isForeignKeyUnique = constraint.find((c) => {
     if (c.classId !== foreignTable.id) return false;
     // Only if the xxx_type, xxx_id are unique constraint
@@ -206,23 +206,51 @@ export const polyForeignKeyUnique = (
 };
 
 export const polymorphicCondition = (
-  build: GraphileBuild,
+  build: Build,
   c: PgPolymorphicConstraint,
   polyQueryBuilder: QueryBuilder,
   targetQueryBuilder: QueryBuilder,
   targetModelName: string,
   pKey: PgAttribute) => {
-  const { pgSql: sql } = build;
-  const sourceTableId = `${c.name}_id`;
-  const sourceTableType = `${c.name}_type`;
   const targetTableAlias = targetQueryBuilder.getTableAlias();
   const polyTableAlias = polyQueryBuilder.getTableAlias();
-  return sql.query`(${sql.fragment`${targetTableAlias}.${sql.identifier(
-    pKey.name,
-  )} = ${sql.fragment`${polyTableAlias}.${sql.identifier(
+  return polySqlKeyMatch(build, polyTableAlias, targetTableAlias, pKey, targetModelName, c);
+};
+export const polySqlKeyMatch = (
+  build: Build,
+  polyAlias: SQL,
+  foreignAlias: SQL,
+  fPKey: PgAttribute,
+  modelName: string, polyConstraint: PgPolymorphicConstraint) => {
+  const { pgSql: sql } = build;
+  const { sourceTableId, sourceTableType } = getSourceColumns(polyConstraint);
+  return sql.query`(${sql.fragment`${polyAlias}.${sql.identifier(
     sourceTableId,
-  )}`}`}) and (
-    ${sql.fragment`${polyTableAlias}.${sql.identifier(
-    sourceTableType,
-  )} = ${sql.value(targetModelName)}`})`;
+  )} = ${foreignAlias}.${sql.identifier(fPKey.name)}`}) and (
+${sql.fragment`${polyAlias}.${sql.identifier(sourceTableType)} = ${sql.value(
+    modelName)}`})`;
+};
+
+export const ensureBuilderUniqueOrder = (
+  build: Build,
+  innerBuilder: QueryBuilder, table: PgClass) => {
+  innerBuilder.beforeLock('orderBy', () => {
+    // append order by primary key to the list of orders
+    const { pgSql: sql } = build;
+    if (!innerBuilder.isOrderUnique(false)) {
+      (innerBuilder as any).data.cursorPrefix = ['primary_key_asc'];
+      if (table.primaryKeyConstraint) {
+        const fPrimaryKeys =
+          table.primaryKeyConstraint.keyAttributes;
+        fPrimaryKeys.forEach((key) => {
+          innerBuilder.orderBy(
+            sql.fragment`${innerBuilder.getTableAlias()}.
+          ${sql.identifier(key.name)}`,
+            true,
+          );
+        });
+      }
+    }
+    innerBuilder.setOrderIsUnique();
+  });
 };
