@@ -342,7 +342,7 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
       some: fieldWithHooks(
         'some',
         {
-          description: `Some related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘and.’`,
+          description: `Some related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘any.’`,
           type: FilterType,
         },
         {
@@ -352,7 +352,7 @@ export const addBackwardPolyRelationFilter = (builder: SchemaBuilder, option: Op
       none: fieldWithHooks(
         'none',
         {
-          description: `No related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘and.’`,
+          description: `No related \`${foreignTableTypeName}\` matches the filter criteria. All fields are combined with a logical ‘none.’`,
           type: FilterType,
         },
         {

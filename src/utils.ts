@@ -190,8 +190,7 @@ export const polyForeignKeyUnique = (
   const {
     pgIntrospectionResultsByKind: { constraint },
   } = build;
-  const sourceTableId = `${c.name}_id`;
-  const sourceTableType = `${c.name}_type`;
+  const { sourceTableId, sourceTableType } = getSourceColumns(c);
   const isForeignKeyUnique = constraint.find((c) => {
     if (c.classId !== foreignTable.id) return false;
     // Only if the xxx_type, xxx_id are unique constraint
