@@ -8,6 +8,8 @@ import {
   PgType,
   PgNamespace,
   PgIndex,
+  SQL,
+  QueryBuilder,
 } from 'graphile-build-pg';
 
 export interface GraphilePgIntrospection {
@@ -51,3 +53,11 @@ export interface PgPolymorphicConstraint {
   }[]; // due to limitation at the time, it is the ModelName array.
 }
 export type PgPolymorphicConstraints = PgPolymorphicConstraint[];
+export interface ResolveFieldProps {
+  sourceAlias: SQL;
+  fieldName: string;
+  fieldValue: any;
+  queryBuilder: QueryBuilder;
+}
+export type SqlFragment = any;
+export type ResolveFieldFunc = (prop: ResolveFieldProps) => SqlFragment | null;

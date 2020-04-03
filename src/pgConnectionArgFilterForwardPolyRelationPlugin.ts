@@ -1,8 +1,7 @@
 import { SchemaBuilder, Build } from 'postgraphile';
 import {
-  PgPolymorphicConstraints, GraphileBuild, PgPolymorphicConstraint,
+  PgPolymorphicConstraints, GraphileBuild, PgPolymorphicConstraint, ResolveFieldFunc,
 } from './postgraphile_types';
-import { ResolveFieldFunc } from './pgConnectionArgFilterBackwardPolyRelationPlugin';
 import { validatePrerequisit, polySqlKeyMatch, getPrimaryKey } from './utils';
 import { PgClass } from 'graphile-build-pg';
 
