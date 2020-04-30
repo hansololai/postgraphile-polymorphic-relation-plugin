@@ -47,6 +47,15 @@ Object {
             ],
           },
         },
+        Object {
+          "taggs": Object {
+            "nodes": Array [],
+          },
+          "uniqueTagg": null,
+          "unorderTaggs": Object {
+            "nodes": Array [],
+          },
+        },
       ],
     },
     "backwardFilterOnPolymorphic": Object {
@@ -61,12 +70,35 @@ Object {
         Object {
           "id": 2,
         },
+        Object {
+          "id": 3,
+        },
+      ],
+    },
+    "backwardFilterOnPolymorphicExist": Object {
+      "nodes": Array [
+        Object {
+          "id": 1,
+        },
+        Object {
+          "id": 2,
+        },
       ],
     },
     "backwardFilterOnPolymorphicNone": Object {
       "nodes": Array [
         Object {
           "id": 1,
+        },
+        Object {
+          "id": 3,
+        },
+      ],
+    },
+    "backwardFilterOnPolymorphicNotExist": Object {
+      "nodes": Array [
+        Object {
+          "id": 3,
         },
       ],
     },
