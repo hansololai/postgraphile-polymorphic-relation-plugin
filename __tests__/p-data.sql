@@ -1,6 +1,7 @@
 insert into p.parent(id, name) values
   (1, 'parent1'),
-  (2, 'parent2');
+  (2, 'parent2'),
+  (3, 'parent3');
 
 insert into p.taggs(id,taggable_id,taggable_type,content) values 
 (1,1,'Parent','tagged on parent1'),

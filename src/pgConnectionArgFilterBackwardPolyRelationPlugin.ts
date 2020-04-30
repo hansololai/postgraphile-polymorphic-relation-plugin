@@ -35,6 +35,34 @@ function makeResolveMany(build: Build, table: PgClass, foreignTable: PgClass) {
   };
   return resolveMany;
 }
+/**
+ * @description Generate Resolve Exist, this is for a hasMany relationshipt
+ * and to filter for if the foreign table( backward relation) exist.
+ * @param build
+ * @param table
+ * @param foreignTable the polymorphic table
+ */
+const generateResolveExist = (
+  build: Build,
+  sourceTable: PgClass, foreignTable: PgClass, poly: PgPolymorphicConstraint) => {
+  const {
+    pgSql: sql,
+    inflection,
+  } = build;
+  const sourceTableTypeName = inflection.tableType(sourceTable);
+  const foreignTableAlias = sql.identifier(Symbol());
+  const sqlIdentifier = sql.identifier(foreignTable.namespace.name, foreignTable.name);
+
+  const resolve: ResolveFieldFunc = ({ sourceAlias, fieldValue, queryBuilder }) => {
+    const pKey = getPrimaryKey(sourceTable);
+    const sqlKeysMatch = polySqlKeyMatch(build, foreignTableAlias,
+      sourceAlias, pKey, sourceTableTypeName, poly);
+    return  sql.query` ${fieldValue ? sql.raw`` :sql.raw`not`} exists(
+      select 1 from ${sqlIdentifier} as ${foreignTableAlias} where ${sqlKeysMatch}
+      )`;
+  };
+  return resolve;
+};
 
 const saveConnectionFilterTypesByTypename = (
   build: Build,
@@ -188,6 +216,7 @@ const addBackwardPolySingleFilter = (builder: SchemaBuilder) => {
       pgPolymorphicClassAndTargetModels = [],
       connectionFilterRegisterResolver,
       extend,
+      graphql:{ GraphQLBoolean },
     } = build as GraphileBuild;
     const {
       scope: { pgIntrospection: table, isPgConnectionFilter },
@@ -217,6 +246,11 @@ const addBackwardPolySingleFilter = (builder: SchemaBuilder) => {
           currentPoly,
           isForeignKeyUnique,
         );
+        const fieldNameExist = inflection.backwardRelationByPolymorphicExist(
+          foreignTable,
+          currentPoly,
+          isForeignKeyUnique,
+        );
         let resolveFunction: any = null;
         let filterType: any = null;
         if (isForeignKeyUnique) {
@@ -240,9 +274,22 @@ const addBackwardPolySingleFilter = (builder: SchemaBuilder) => {
               isPgConnectionFilterField: true,
             },
           ),
+          [fieldNameExist]: fieldWithHooks(
+            fieldNameExist,
+            {
+              description: `Filter for if the object’s \`${fieldName}\` \
+              polymorphic relation exist.`,
+              type: GraphQLBoolean,
+            },
+            {
+              isPgConnectionFilterField: true,
+            },
+          ),
         };
         // Resolver
         connectionFilterRegisterResolver(Self.name, fieldName, resolveFunction);
+        connectionFilterRegisterResolver(Self.name, fieldNameExist,
+          generateResolveExist(build, table, foreignTable, currentPoly));
         return extend(acc, singleField);
       }, {});
 

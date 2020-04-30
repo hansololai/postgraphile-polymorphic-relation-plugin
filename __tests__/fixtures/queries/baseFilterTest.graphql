@@ -39,6 +39,20 @@ query text {
       id
     }
   }
+  backwardFilterOnPolymorphicExist: allParents(filter:{
+    taggsExists:true
+  }){
+    nodes{
+      id
+    }
+  }
+  backwardFilterOnPolymorphicNotExist: allParents(filter:{
+    taggsExists:false
+  }){
+    nodes{
+      id
+    }
+  } 
   backwardFilterOnPolymorphicEvery: allParents(filter:{
     taggs:{
       every:{

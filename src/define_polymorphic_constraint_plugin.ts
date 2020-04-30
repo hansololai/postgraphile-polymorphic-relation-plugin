@@ -34,6 +34,13 @@ export const definePolymorphicCustom = (builder: SchemaBuilder, options: Options
       // return this.camelCase(`${fieldName}-as-${polymorphicName}`);
       return this.camelCase(fieldName);
     },
+    backwardRelationByPolymorphicExist(
+      table: PgClass,
+      polyConstraint: PgPolymorphicConstraint,
+      isUnique: boolean,
+    ) {
+      return `${this.backwardRelationByPolymorphic(table, polyConstraint, isUnique)}Exists`;
+    },
   }));
   builder.hook('build', (build) => {
     const {
