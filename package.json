@@ -1,6 +1,6 @@
 {
   "name": "postgraphile-polymorphic-relation-plugin",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Extention that add Polymorphic Assocations in PostGraphile",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
