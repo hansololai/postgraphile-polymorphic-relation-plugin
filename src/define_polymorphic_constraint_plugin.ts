@@ -39,7 +39,7 @@ export const definePolymorphicCustom = (builder: SchemaBuilder, options: Options
       polyConstraint: PgPolymorphicConstraint,
       isUnique: boolean,
     ) {
-      return `${this.backwardRelationByPolymorphic(table, polyConstraint, isUnique)}Exists`;
+      return `${this.backwardRelationByPolymorphic(table, polyConstraint, isUnique)}Exist`;
     },
   }));
   builder.hook('build', (build) => {
