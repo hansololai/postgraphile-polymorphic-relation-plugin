@@ -40,14 +40,14 @@ query text {
     }
   }
   backwardFilterOnPolymorphicExist: allParents(filter:{
-    taggsExists:true
+    taggsExist:true
   }){
     nodes{
       id
     }
   }
   backwardFilterOnPolymorphicNotExist: allParents(filter:{
-    taggsExists:false
+    taggsExist:false
   }){
     nodes{
       id
