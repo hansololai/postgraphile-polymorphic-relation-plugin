@@ -83,6 +83,7 @@ export const generateFieldWithHookFunc = (
   joinCallback: (qb1: QueryBuilder, qb2: QueryBuilder) => void,
   isUnique: boolean = true,
   isConnection: boolean = false,
+  fieldName:string,
 ) => {
   const {
     pgSql: sql,
@@ -99,7 +100,7 @@ export const generateFieldWithHookFunc = (
     null,
   );
   const innerTableConnectionType = getTypeByName(
-    inflection.connection(innerTable.name),
+    inflection.connection(innerTableType.name),
   );
   let returnType = innerTableType;
   let fieldType = innerTableType;
@@ -167,7 +168,7 @@ export const generateFieldWithHookFunc = (
         resolveInfo: IGraphQLToolsResolveInfo) => {
         const safeAlias = getSafeAliasFromResolveInfo(resolveInfo);
         // return null;
-        return data[safeAlias];
+        return data[safeAlias] || data[fieldName];
       },
     };
   };

@@ -44,6 +44,7 @@ export const addForwardPolyAssociation = (builder: SchemaBuilder, option: Option
               qb2.where(polymorphicCondition(build as GraphileBuild,
                 currentPoly, qb1, qb2, mName, foreignPrimaryKey));
             },
+            fieldName,
           );
           return {
             ...acc,

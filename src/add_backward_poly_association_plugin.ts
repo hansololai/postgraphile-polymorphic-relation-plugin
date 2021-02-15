@@ -62,6 +62,7 @@ export const addBackwardPolyAssociation = (builder: SchemaBuilder, option: Optio
               ensureBuilderUniqueOrder(build, innerBuilder, foreignTable);
             }
           },
+          fieldName,
           isForeignKeyUnique,
           isConnection,
         );
