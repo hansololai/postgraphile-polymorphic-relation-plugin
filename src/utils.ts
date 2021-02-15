@@ -81,9 +81,9 @@ export const generateFieldWithHookFunc = (
   build: GraphileBuild,
   innerTable: PgClass,
   joinCallback: (qb1: QueryBuilder, qb2: QueryBuilder) => void,
+  fieldName:string,
   isUnique: boolean = true,
   isConnection: boolean = false,
-  fieldName:string,
 ) => {
   const {
     pgSql: sql,
