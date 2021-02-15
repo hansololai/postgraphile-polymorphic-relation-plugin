@@ -81,7 +81,6 @@ export const generateFieldWithHookFunc = (
   build: GraphileBuild,
   innerTable: PgClass,
   joinCallback: (qb1: QueryBuilder, qb2: QueryBuilder) => void,
-  fieldName:string,
   isUnique: boolean = true,
   isConnection: boolean = false,
 ) => {
@@ -168,7 +167,7 @@ export const generateFieldWithHookFunc = (
         resolveInfo: IGraphQLToolsResolveInfo) => {
         const safeAlias = getSafeAliasFromResolveInfo(resolveInfo);
         // return null;
-        return data[safeAlias] || data[fieldName];
+        return data[safeAlias] || data[resolveInfo.fieldName];
       },
     };
   };
