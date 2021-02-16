@@ -99,7 +99,7 @@ export const generateFieldWithHookFunc = (
     null,
   );
   const innerTableConnectionType = getTypeByName(
-    inflection.connection(innerTableType.name),
+    inflection.connection(innerTable.name),
   );
   let returnType = innerTableType;
   let fieldType = innerTableType;
