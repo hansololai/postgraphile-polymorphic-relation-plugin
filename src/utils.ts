@@ -167,7 +167,7 @@ export const generateFieldWithHookFunc = (
         resolveInfo: IGraphQLToolsResolveInfo) => {
         const safeAlias = getSafeAliasFromResolveInfo(resolveInfo);
         // return null;
-        return data[safeAlias];
+        return data[safeAlias] || data[resolveInfo.fieldName];
       },
     };
   };
