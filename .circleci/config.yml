@@ -126,6 +126,6 @@ workflows:
           filters:
             # Only deploy when there's tags pushed
             tags:
-              only: /^v.*/
+              only: /.*/
             branches:
               ignore: /.*/
